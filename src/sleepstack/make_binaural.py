@@ -18,7 +18,7 @@ import argparse, math, struct, wave, sys
 try:
     import numpy as np
 except Exception:
-    np = None  # type: ignore
+    np = None
 
 
 def positive_float_minutes(v: str) -> float:
@@ -87,14 +87,14 @@ def generate_binaural(
         stereo = np.empty(n * 2, dtype=np.int16)
         stereo[0::2] = left_i16
         stereo[1::2] = right_i16
-        return stereo.tobytes()
+        return bytes(stereo.tobytes())
 
     # ---- Fallback: pure stdlib (slower for long tracks, but fine) ----
     frames = bytearray()
     two_pi = 2.0 * math.pi
     peak = int(32767 * volume)
 
-    def env_gain(i):
+    def env_gain(i: int) -> float:
         if n_fade == 0:
             return 1.0
         if i < n_fade:
