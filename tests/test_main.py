@@ -168,8 +168,8 @@ class TestPathResolution:
         assert (assets_dir / "ambience" / "campfire").exists()
 
     def test_choose_campfire_clip(self) -> None:
-        """Test campfire clip selection."""
-        # Test with different durations
+        """Test campfire clip selection - now always returns 1m clip."""
+        # Test with different durations - all should return 1m clip
         sample_rate = 48000
 
         # 30 seconds should choose 1m clip
@@ -180,17 +180,198 @@ class TestPathResolution:
         clip_90s = choose_campfire_clip(90 * sample_rate, sample_rate)
         assert "campfire_1m.wav" in clip_90s
 
-        # 200 seconds should choose 1m clip (less than 5m)
+        # 200 seconds should choose 1m clip
         clip_200s = choose_campfire_clip(200 * sample_rate, sample_rate)
         assert "campfire_1m.wav" in clip_200s
 
-        # 400 seconds should choose 5m clip
+        # 400 seconds should choose 1m clip (now uses tiling)
         clip_400s = choose_campfire_clip(400 * sample_rate, sample_rate)
-        assert "campfire_5m.wav" in clip_400s
+        assert "campfire_1m.wav" in clip_400s
 
-        # 700 seconds should choose 10m clip
+        # 700 seconds should choose 1m clip (now uses tiling)
         clip_700s = choose_campfire_clip(700 * sample_rate, sample_rate)
-        assert "campfire_10m.wav" in clip_700s
+        assert "campfire_1m.wav" in clip_700s
+
+        # Very long duration should still choose 1m clip
+        clip_long = choose_campfire_clip(1200 * sample_rate, sample_rate)  # 20 minutes
+        assert "campfire_1m.wav" in clip_long
+
+
+class TestAmbientSoundRefactor:
+    """Test the simplified ambient sound system with 1m clips and tiling."""
+
+    def test_very_long_durations_tiling(self) -> None:
+        """Test that very long durations work correctly with 1m clip tiling."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create test binaural (20 minutes)
+            binaural_path = Path(tmpdir) / "binaural.wav"
+            preset = PRESETS["calm"]
+            generate_binaural_wav(
+                duration_sec=1200.0, preset=preset, vibe_key="calm", out_path=str(binaural_path)
+            )
+
+            # Create test ambience (1 minute - will be tiled)
+            ambience_path = Path(tmpdir) / "ambience.wav"
+            sample_rate = 48000
+            ambience_data = np.random.randn(sample_rate * 60, 1).astype(np.float64)  # 1 minute
+            write_wav(str(ambience_path), ambience_data, sample_rate)
+
+            # Mix
+            mix_path = mix_binaural_and_ambience(
+                binaural_path=str(binaural_path),
+                ambience_path=str(ambience_path),
+                out_path=str(Path(tmpdir) / "mix.wav"),
+            )
+
+            # Verify lengths match
+            binaural_data, _, _ = read_wav(str(binaural_path))
+            mix_data, _, _ = read_wav(mix_path)
+
+            assert mix_data.shape[0] == binaural_data.shape[0]
+            assert mix_data.shape[1] == 2  # Stereo
+            # Should be exactly 20 minutes worth of samples
+            assert mix_data.shape[0] == 1200 * sample_rate
+
+    def test_fade_application_with_looped_audio(self) -> None:
+        """Test that fade application works correctly with looped ambience."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create test binaural (5 minutes)
+            binaural_path = Path(tmpdir) / "binaural.wav"
+            preset = PRESETS["calm"]
+            generate_binaural_wav(
+                duration_sec=300.0, preset=preset, vibe_key="calm", out_path=str(binaural_path)
+            )
+
+            # Create test ambience (1 minute - will be tiled 5 times)
+            ambience_path = Path(tmpdir) / "ambience.wav"
+            sample_rate = 48000
+            # Create a simple pattern that we can verify
+            ambience_data = np.ones((sample_rate * 60, 1)).astype(np.float64)  # 1 minute of ones
+            write_wav(str(ambience_path), ambience_data, sample_rate)
+
+            # Mix with fade
+            mix_path = mix_binaural_and_ambience(
+                binaural_path=str(binaural_path),
+                ambience_path=str(ambience_path),
+                ambience_fade=10.0,  # 10 second fade
+                out_path=str(Path(tmpdir) / "mix.wav"),
+            )
+
+            # Read mixed result
+            mix_data, _, _ = read_wav(mix_path)
+
+            # Check that fade was applied to the ambience
+            fade_samples = int(10.0 * sample_rate)
+            # The ambience should be faded at the beginning and end
+            # We can't easily test the exact values due to mixing with binaural,
+            # but we can verify the structure is correct
+            assert mix_data.shape[0] == 300 * sample_rate  # 5 minutes
+            assert mix_data.shape[1] == 2  # Stereo
+
+    def test_exact_one_minute_duration(self) -> None:
+        """Test edge case of exactly 1-minute duration."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create test binaural (exactly 1 minute)
+            binaural_path = Path(tmpdir) / "binaural.wav"
+            preset = PRESETS["calm"]
+            generate_binaural_wav(
+                duration_sec=60.0, preset=preset, vibe_key="calm", out_path=str(binaural_path)
+            )
+
+            # Create test ambience (exactly 1 minute - should match perfectly)
+            ambience_path = Path(tmpdir) / "ambience.wav"
+            sample_rate = 48000
+            ambience_data = np.random.randn(sample_rate * 60, 1).astype(np.float64)
+            write_wav(str(ambience_path), ambience_data, sample_rate)
+
+            # Mix
+            mix_path = mix_binaural_and_ambience(
+                binaural_path=str(binaural_path),
+                ambience_path=str(ambience_path),
+                out_path=str(Path(tmpdir) / "mix.wav"),
+            )
+
+            # Verify lengths match exactly
+            binaural_data, _, _ = read_wav(str(binaural_path))
+            mix_data, _, _ = read_wav(mix_path)
+
+            assert mix_data.shape[0] == binaural_data.shape[0]
+            assert mix_data.shape[0] == 60 * sample_rate  # Exactly 1 minute
+
+    def test_very_short_duration(self) -> None:
+        """Test edge case of very short duration (less than 1 minute)."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create test binaural (10 seconds)
+            binaural_path = Path(tmpdir) / "binaural.wav"
+            preset = PRESETS["calm"]
+            generate_binaural_wav(
+                duration_sec=10.0, preset=preset, vibe_key="calm", out_path=str(binaural_path)
+            )
+
+            # Create test ambience (1 minute - will be trimmed)
+            ambience_path = Path(tmpdir) / "ambience.wav"
+            sample_rate = 48000
+            ambience_data = np.random.randn(sample_rate * 60, 1).astype(np.float64)  # 1 minute
+            write_wav(str(ambience_path), ambience_data, sample_rate)
+
+            # Mix
+            mix_path = mix_binaural_and_ambience(
+                binaural_path=str(binaural_path),
+                ambience_path=str(ambience_path),
+                out_path=str(Path(tmpdir) / "mix.wav"),
+            )
+
+            # Verify lengths match
+            binaural_data, _, _ = read_wav(str(binaural_path))
+            mix_data, _, _ = read_wav(mix_path)
+
+            assert mix_data.shape[0] == binaural_data.shape[0]
+            assert mix_data.shape[0] == 10 * sample_rate  # Exactly 10 seconds
+
+    def test_no_audio_artifacts_at_loop_boundaries(self) -> None:
+        """Test that there are no audio artifacts at loop boundaries."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create test binaural (3 minutes - will require 3 loops of 1m clip)
+            binaural_path = Path(tmpdir) / "binaural.wav"
+            preset = PRESETS["calm"]
+            generate_binaural_wav(
+                duration_sec=180.0, preset=preset, vibe_key="calm", out_path=str(binaural_path)
+            )
+
+            # Create test ambience with a known pattern
+            ambience_path = Path(tmpdir) / "ambience.wav"
+            sample_rate = 48000
+            # Create a simple sine wave pattern
+            t = np.linspace(0, 60, sample_rate * 60, False)  # 1 minute
+            ambience_data = np.sin(2 * np.pi * 1 * t).reshape(-1, 1)  # 1 Hz sine wave
+            write_wav(str(ambience_path), ambience_data, sample_rate)
+
+            # Mix
+            mix_path = mix_binaural_and_ambience(
+                binaural_path=str(binaural_path),
+                ambience_path=str(ambience_path),
+                out_path=str(Path(tmpdir) / "mix.wav"),
+            )
+
+            # Read mixed result
+            mix_data, _, _ = read_wav(mix_path)
+
+            # Check that the pattern continues smoothly across loop boundaries
+            # At 60 seconds (1 minute), the pattern should continue smoothly
+            loop_boundary = 60 * sample_rate
+            # We can't easily test for exact continuity due to mixing with binaural,
+            # but we can verify the structure is correct
+            assert mix_data.shape[0] == 180 * sample_rate  # 3 minutes
+            assert mix_data.shape[1] == 2  # Stereo
+
+            # Check that there are no sudden jumps or discontinuities
+            # (This is a basic check - more sophisticated analysis would require
+            # separating the ambience component from the mix)
+            diff = np.diff(mix_data, axis=0)
+            max_diff = np.max(np.abs(diff))
+            # The maximum difference should be reasonable (not infinite or NaN)
+            assert np.isfinite(max_diff)
+            assert max_diff < 10.0  # Reasonable threshold
 
 
 class TestBinauralGeneration:

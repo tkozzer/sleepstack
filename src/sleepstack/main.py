@@ -14,7 +14,7 @@ Required:
 
 Examples:
   python main.py --vibe calm -a campfire -m 5
-  python main.py --vibe deep --ambience-file sounds/ambient/campfire/campfire_10m.wav -m 10
+  python main.py --vibe deep --ambience-file sounds/ambient/campfire/campfire_1m.wav -m 10
 
 Optional highlights:
   --beat, --carrier, --samplerate, --volume, --fade, --loop    # binaural generation
@@ -25,7 +25,7 @@ Optional highlights:
 Assumptions:
 - Repo layout has:
   - make_binaural.py (with generate_binaural() and save_wav())
-  - sounds/ambient/campfire/{campfire_1m.wav, campfire_5m.wav, campfire_10m.wav}
+  - sounds/ambient/campfire/campfire_1m.wav (1-minute clip with automatic looping)
 - No resampling here. Keep all audio at the same samplerate (e.g., 48000 Hz).
 - Requires numpy for mixing.
 """
@@ -293,19 +293,9 @@ def generate_binaural_wav(
 
 
 def choose_campfire_clip(target_samples: int, sr: int) -> str:
-    """Pick longest clip <= target (10m, 5m, else 1m) under assets/ambience/campfire/"""
+    """Always return the 1-minute campfire clip for automatic looping."""
     camp_dir = find_assets_dir() / "ambience" / "campfire"
-    options = [
-        ("campfire_10m.wav", 600),
-        ("campfire_5m.wav", 300),
-        ("campfire_1m.wav", 60),
-    ]
-    target_sec = target_samples / sr
-    chosen = "campfire_1m.wav"  # Default fallback
-    for name, secs in options:
-        if target_sec >= secs:
-            chosen = name
-            break  # Take the first (longest) that fits
+    chosen = "campfire_1m.wav"
     path = camp_dir / chosen
     if not path.exists():
         raise SystemExit(f"Missing ambience clip: {path}")

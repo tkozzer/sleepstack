@@ -19,7 +19,7 @@ Usage (auto-campfire):
 Usage (explicit ambience file):
   python mix_binaural_with_ambience.py \
     --binaural build/binaural/meta_core_theta6_5min.wav \
-    --ambience-file assets/ambience/campfire/campfire_5m.wav \
+    --ambience-file assets/ambience/campfire/campfire_1m.wav \
     --out build/mix/meta_core_theta6_5min__campfire.wav
 
 Notes:
@@ -141,22 +141,10 @@ def campfire_dir() -> str:
 
 def choose_campfire_clip(target_samples: int, sr: int) -> str:
     """
-    Pick the longest campfire clip that does not exceed the target duration (1m, 5m, 10m).
-    If target is shorter than 1m, still returns 1m; we will trim later.
+    Always return the 1-minute campfire clip for automatic looping.
+    The existing tiling mechanism will handle any duration.
     """
-    cand = [
-        ("campfire_10m.wav", 600),
-        ("campfire_5m.wav", 300),
-        ("campfire_1m.wav", 60),
-    ]
-    target_sec = duration_sec(target_samples, sr)
-
-    # Prefer the longest clip <= target (minimize repeats); else fall back to 1m.
     chosen = "campfire_1m.wav"
-    for name, secs in cand:
-        if target_sec >= secs:
-            chosen = name
-            break
     path = os.path.join(campfire_dir(), chosen)
     if not os.path.exists(path):
         raise SystemExit(

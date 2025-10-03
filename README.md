@@ -37,7 +37,7 @@ uv run sleepstack --help
 ## Features
 
 - **10 vibe presets**: calm, deep, soothe, meditate, airy, warm, focus, flow, alert, dream
-- **Ambient mixing**: Automatic mixing with campfire sounds and custom ambience files
+- **Ambient mixing**: Automatic mixing with campfire sounds (1-minute clips with seamless looping) and custom ambience files
 - **Customizable parameters**: Beat frequency, carrier frequency, volume, fade settings
 - **Duration limits**: Maximum 10 minutes per track (prevents excessive file sizes and memory usage)
 - **High-quality output**: 48kHz stereo WAV files optimized for narration

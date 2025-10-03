@@ -38,7 +38,7 @@ uv sync
 ```
 
    - The package is structured as `src/sleepstack/` with CLI entry point.
-   - Ambience clips are at: `assets/ambience/campfire/{campfire_1m.wav, campfire_5m.wav, campfire_10m.wav}`.
+   - Ambience clips are at: `assets/ambience/campfire/campfire_1m.wav` (1-minute clip with automatic looping).
    - Keep sample rate consistent (**48 kHz** for everything). **Stereo headphones required** (don't downmix).
    - All example commands assume your files are in the shown folders; if not, use `--out` / `--binaural-out` to set paths.
 
@@ -63,7 +63,7 @@ uv run sleepstack --vibe calm -a campfire -m 5 --out build/mix/calm_5m__campfire
 
 This will:
    - Create a 5-minute calm binaural bed (6 Hz at 200 Hz).
-   - Auto-pick the right campfire clip (1m/5m/10m) and tile/trim it to match 5 minutes.
+   - Use the 1-minute campfire clip with automatic looping to match 5 minutes.
    - Mix them at comfortable defaults (binaural -15 dB, ambience -21 dB, ambience has 2s fades).
    - Save to `build/mix/` with a sensible filename.
 
@@ -74,7 +74,7 @@ This will:
      - **Maximum duration**: 10 minutes (600 seconds) per track
      - **Minimum duration**: Any value > 0
    - One ambience source:
-     - `--ambient campfire` (auto-pick from your campfire clips)
+     - `--ambient campfire` (uses 1-minute campfire clip with automatic looping)
      - OR `--ambience-file path/to/ambient.wav` (explicit file; mono is okay; it will be duplicated to L/R)
 
 ### New CLI Features
@@ -85,7 +85,7 @@ This will:
 
 Example with explicit ambience file:
 ```bash
-uv run sleepstack --vibe calm --ambience-file assets/ambience/campfire/campfire_5m.wav -m 5
+uv run sleepstack --vibe calm --ambience-file assets/ambience/campfire/campfire_1m.wav -m 5
 ```
 
 6. Useful optional arguments (`sleepstack`)
@@ -157,7 +157,7 @@ uv run sleepstack --vibe focus -a campfire -m 5
    - **Headphones only**: binaural beats don't work on laptop speakers; you need stereo headphones.
    - **Duration limits**: Maximum 10 minutes per track. If you get "must be <= 10 minutes" or "must be <= 600 seconds", reduce your duration.
    - If ambience is mono, the mixer duplicates it to L/R—this is expected.
-   - If you get 'file not found' for campfire clips, confirm they exist at `assets/ambience/campfire/` and are 48 kHz WAVs.
+   - If you get 'file not found' for campfire clips, confirm `campfire_1m.wav` exists at `assets/ambience/campfire/` and is a 48 kHz WAV.
    - "Sample rate mismatch" error: regenerate or resample so both files match (recommend 48000 Hz).
    - "Binaural must be stereo": ensure you generated the bed with `sleepstack` and haven't converted it to mono.
    - The mix feels boomy: reduce ambience level by 2–4 dB or use a gentle low-shelf/HPF on ambience in your DAW.
