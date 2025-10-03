@@ -156,17 +156,31 @@ def resolve_vibe(v: str) -> str:
 
 
 def read_wav(path: str) -> Tuple[np.ndarray, int, int]:
-    with wave.open(path, "rb") as wf:
-        sr = wf.getframerate()
-        ch = wf.getnchannels()
-        sw = wf.getsampwidth()
-        if sw != 2:
-            raise SystemExit(f"{path}: only 16-bit PCM supported (got {sw*8}-bit).")
-        frames = wf.getnframes()
-        raw = wf.readframes(frames)
-    data = np.frombuffer(raw, dtype=np.int16).astype(np.float64).reshape(-1, ch)
-    data /= 32767.0
-    return data, sr, ch
+    import time
+    
+    # Retry mechanism for file system synchronization issues in CI
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            with wave.open(path, "rb") as wf:
+                sr = wf.getframerate()
+                ch = wf.getnchannels()
+                sw = wf.getsampwidth()
+                if sw != 2:
+                    raise SystemExit(f"{path}: only 16-bit PCM supported (got {sw*8}-bit).")
+                frames = wf.getnframes()
+                raw = wf.readframes(frames)
+            data = np.frombuffer(raw, dtype=np.int16).astype(np.float64).reshape(-1, ch)
+            data /= 32767.0
+            return data, sr, ch
+        except Exception as e:
+            if attempt < max_retries - 1:
+                # Wait with exponential backoff before retrying
+                time.sleep(0.1 * (2 ** attempt))
+                continue
+            else:
+                # Re-raise the original exception on final attempt
+                raise e
 
 
 def write_wav(path: str, data: np.ndarray, sr: int) -> None:
