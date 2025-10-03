@@ -218,23 +218,12 @@ __marimo__/
 # *.flac
 # *.ogg
 
-# Generated audio outputs
-build/
-
 # IDE and editor files
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
-
-# DAW cache files
-*.band
-*.logicx
-*.cpr
-*.als
-*.flp
-*.rpp
 
 # macOS
 .DS_Store
