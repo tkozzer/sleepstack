@@ -157,11 +157,20 @@ def resolve_vibe(v: str) -> str:
 
 def read_wav(path: str) -> Tuple[np.ndarray, int, int]:
     import time
+    import os
 
     # Retry mechanism for file system synchronization issues in CI
-    max_retries = 3
+    max_retries = 5
     for attempt in range(max_retries):
         try:
+            # Check if file exists and has content
+            if not os.path.exists(path):
+                raise FileNotFoundError(f"File does not exist: {path}")
+
+            file_size = os.path.getsize(path)
+            if file_size == 0:
+                raise ValueError(f"File is empty: {path}")
+
             with wave.open(path, "rb") as wf:
                 sr = wf.getframerate()
                 ch = wf.getnchannels()
@@ -175,11 +184,16 @@ def read_wav(path: str) -> Tuple[np.ndarray, int, int]:
             return data, sr, ch
         except Exception as e:
             if attempt < max_retries - 1:
-                # Wait with exponential backoff before retrying
-                time.sleep(0.1 * (2**attempt))
+                # Wait with longer delays for CI environments
+                delay = 0.5 * (2**attempt)  # 0.5s, 1s, 2s, 4s
+                logging.debug(
+                    f"Read attempt {attempt + 1} failed for {path}: {e}. Retrying in {delay}s..."
+                )
+                time.sleep(delay)
                 continue
             else:
                 # Re-raise the original exception on final attempt
+                logging.error(f"All {max_retries} read attempts failed for {path}. Last error: {e}")
                 raise e
 
     # This should never be reached, but satisfies mypy
