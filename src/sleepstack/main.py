@@ -456,11 +456,8 @@ def main(argv: list[str] | None = None) -> int:
     # 2) Resolve ambience path
     if args.ambient:
         # Auto-pick campfire clip by binaural length
-        # Read binaural to get length in samples
-        b, sr_check, ch = read_wav(binaural_path)
-        if sr_check != sr_b:
-            raise SystemExit("Internal samplerate mismatch after generation.")
-        target_samples = b.shape[0]
+        # Calculate target samples directly from duration and sample rate
+        target_samples = int(duration_sec * sr_b)
         ambience_path = choose_campfire_clip(target_samples, sr_b)
     else:
         ambience_path = str(Path(args.ambience_file).expanduser().resolve())
