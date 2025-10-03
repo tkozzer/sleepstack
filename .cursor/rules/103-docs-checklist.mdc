@@ -1,0 +1,85 @@
+---
+globs: _docs/**/*.md
+alwaysApply: false
+---
+## Checklist Maintenance Rules
+
+- Always update checklists immediately after completing a task:
+  - Check off the specific sub-item(s) completed
+  - Keep parent items unchecked until all child items are done
+  - Optionally add a brief note with concrete details (files touched, key choices like icons/colors, links)
+
+- Modify checklists when new info appears:
+  - Add new sub-items for additional scope or edge cases discovered
+  - Update item text to reflect the actual implementation if it diverges from original plan
+  - Keep notes concise and actionable; reference files and paths using backticks (e.g., `pages/index.vue`)
+
+- Procedure after making code changes tied to a checklist:
+  1. Edit the relevant `_docs/*checklist.md` and mark the item(s) as done
+  2. Include a short note only if it improves clarity (1–2 lines)
+  3. Run linters as usual; keep docs in sync with code changes
+
+## Checklist Formatting Standards
+
+### File Structure
+- **Header**: Use YAML frontmatter with `title` and `description`
+- **Reference line**: Include "This checklist follows `103-docs-checklist` — keep it updated as tasks complete. Reference real files using backticks."
+- **Sections**: Use `#` for main sections, `##` for subsections
+- **Notes section**: End with a `# Notes` section for project-specific guidance
+- **Dependencies section**: Add a `# Dependencies` section near the top listing required packages split into Build-time and Runtime with `uv` commands
+
+### Task Item Format
+- **Main tasks**: Use `- [ ]` for incomplete, `- [x]` for complete
+- **Sub-tasks**: Indent with 2 spaces and use `- [x]` format
+- **File references**: Always use backticks for file paths (e.g., `src/sleepstack/cli.py`)
+- **Implementation notes**: Add brief details in parentheses or as sub-items
+
+### Content Organization
+- **Goal & KPI section**: Start with clear objectives and success metrics
+- **Logical grouping**: Group related tasks under descriptive section headers
+- **Progressive disclosure**: Use subsections for complex features
+- **Dependencies**: Order tasks to show logical flow and dependencies
+
+### Dependencies Section
+- **Placement**: Immediately after the reference line, add a `# Dependencies` section
+- **Split by type**:
+  - **Build-time**: development tools and type checkers (install with `uv add --dev ...`)
+  - **Runtime**: libraries used at runtime (install with `uv add ...`)
+- **Details**: For each dependency, note where it runs (CLI/server), whether it is dynamically imported, and if optional
+- **Command examples**:
+  - Build-time: `uv add --dev <dep1> <dep2>`
+  - Runtime: `uv add <depA> <depB>`
+- **Example**:
+```markdown
+# Dependencies
+
+- Build-time
+  - uv add --dev pytest black mypy
+- Runtime
+  - uv add numpy soundfile
+  - uv add click (CLI framework)
+```
+
+### Completion Tracking
+- **Granular sub-tasks**: Break complex items into specific implementation steps
+- **File-specific notes**: Reference actual files created/modified
+- **Technical details**: Include key implementation choices (e.g., "using shadcn carousel")
+- **Status updates**: Update parent items only when all sub-items are complete
+
+### Examples of Good Formatting
+```markdown
+- [x] CLI interface: "Generate binaural beats with ambient sounds."
+- [x] Vibe selection: calm, focus, meditate, flow, dream, deep, alert, airy, warm, soothe
+  - [x] Implemented in `src/sleepstack/vibe_binaural.py`
+- [x] Audio mixing: binaural beats with ambient background
+  - [x] Implemented in `src/sleepstack/mix_binaural_with_ambience.py`
+  - [x] Reads audio files from `assets/ambience/` directory
+  - [x] Outputs mixed audio to `build/mix/` directory
+```
+
+### Notes Section Guidelines
+- **Project context**: Include relevant project-specific information
+- **Technical constraints**: Document important architectural decisions
+- **Reference materials**: Point to external resources or prototypes
+- **Conventions**: Remind about coding standards and tool usage
+

@@ -1,0 +1,18 @@
+---
+globs: _docs/**/*.md
+alwaysApply: false
+---
+
+Follow this process:
+
+1) Install all required dependencies for the current checklist section using uv.
+
+2) Implement the relevant code for the section (initially, you may ignore lint and type errors).
+
+3) Run `uv run` commands to test functionality and `uv run mypy` or `uv run black` to check code quality.
+
+4) Update the checklist:
+   - Mark completed items as done.
+   - Add any missing details or clarifications that are informative for future reference.
+
+5) Clearly state which section or task will be addressed next, providing a brief description or rationale.
