@@ -345,10 +345,21 @@ def mix_binaural_and_ambience(
 # ---------- CLI ----------
 
 
-def positive_float(v: str) -> float:
+def positive_float_minutes(v: str) -> float:
     x = float(v)
     if x <= 0:
         raise argparse.ArgumentTypeError("must be > 0")
+    if x > 10:
+        raise argparse.ArgumentTypeError("must be <= 10 minutes")
+    return x
+
+
+def positive_float_seconds(v: str) -> float:
+    x = float(v)
+    if x <= 0:
+        raise argparse.ArgumentTypeError("must be > 0")
+    if x > 600:  # 10 minutes * 60 seconds
+        raise argparse.ArgumentTypeError("must be <= 600 seconds (10 minutes)")
     return x
 
 
@@ -370,8 +381,8 @@ def main(argv: list[str] | None = None) -> int:
         help="Vibe name (e.g., calm, deep, soothe, meditate, airy, warm, focus, flow, alert)",
     )
     dur = ap.add_mutually_exclusive_group(required=True)
-    dur.add_argument("--minutes", "-m", type=positive_float, help="Duration in minutes")
-    dur.add_argument("--seconds", "-s", type=positive_float, help="Duration in seconds")
+    dur.add_argument("--minutes", "-m", type=positive_float_minutes, help="Duration in minutes")
+    dur.add_argument("--seconds", "-s", type=positive_float_seconds, help="Duration in seconds")
     amb = ap.add_mutually_exclusive_group(required=True)
     amb.add_argument(
         "--ambient",
@@ -382,10 +393,10 @@ def main(argv: list[str] | None = None) -> int:
     amb.add_argument("--ambience-file", help="Explicit ambience WAV path (mono or stereo)")
 
     # Optional binaural overrides
-    ap.add_argument("--beat", type=positive_float, help="Override beat Hz")
-    ap.add_argument("--carrier", type=positive_float, help="Override carrier Hz")
+    ap.add_argument("--beat", type=float, help="Override beat Hz")
+    ap.add_argument("--carrier", type=float, help="Override carrier Hz")
     ap.add_argument("--samplerate", type=int, help="Override samplerate (e.g., 48000)")
-    ap.add_argument("--volume", type=positive_float, help="Override output volume scalar (0–1]")
+    ap.add_argument("--volume", type=float, help="Override output volume scalar (0–1]")
     ap.add_argument("--fade", type=nonneg_float, help="Override binaural fade sec")
     ap.add_argument("--loop", action="store_true", help="Set binaural fade=0 for seamless looping")
 

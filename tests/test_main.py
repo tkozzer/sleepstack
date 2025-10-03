@@ -404,3 +404,147 @@ class TestCLIIntegration:
             assert data.dtype == np.int16 or data.dtype == np.float64
             assert data.shape[0] == 48000  # 1 second at 48kHz
             assert data.shape[1] == 2  # Stereo
+
+
+class TestDurationValidation:
+    """Test duration validation and limits."""
+
+    def test_positive_float_minutes_validation(self) -> None:
+        """Test positive_float_minutes function validation."""
+        from sleepstack.main import positive_float_minutes
+        import argparse
+
+        # Valid values
+        assert positive_float_minutes("1") == 1.0
+        assert positive_float_minutes("5.5") == 5.5
+        assert positive_float_minutes("10") == 10.0
+        assert positive_float_minutes("0.1") == 0.1
+
+        # Invalid values - zero
+        with pytest.raises(argparse.ArgumentTypeError, match="must be > 0"):
+            positive_float_minutes("0")
+
+        # Invalid values - negative
+        with pytest.raises(argparse.ArgumentTypeError, match="must be > 0"):
+            positive_float_minutes("-1")
+        with pytest.raises(argparse.ArgumentTypeError, match="must be > 0"):
+            positive_float_minutes("-0.1")
+
+        # Invalid values - over 10 minutes
+        with pytest.raises(argparse.ArgumentTypeError, match="must be <= 10 minutes"):
+            positive_float_minutes("10.1")
+        with pytest.raises(argparse.ArgumentTypeError, match="must be <= 10 minutes"):
+            positive_float_minutes("15")
+        with pytest.raises(argparse.ArgumentTypeError, match="must be <= 10 minutes"):
+            positive_float_minutes("60")
+
+    def test_positive_float_seconds_validation(self) -> None:
+        """Test positive_float_seconds function validation."""
+        from sleepstack.main import positive_float_seconds
+        import argparse
+
+        # Valid values
+        assert positive_float_seconds("1") == 1.0
+        assert positive_float_seconds("300") == 300.0
+        assert positive_float_seconds("600") == 600.0
+        assert positive_float_seconds("0.1") == 0.1
+
+        # Invalid values - zero
+        with pytest.raises(argparse.ArgumentTypeError, match="must be > 0"):
+            positive_float_seconds("0")
+
+        # Invalid values - negative
+        with pytest.raises(argparse.ArgumentTypeError, match="must be > 0"):
+            positive_float_seconds("-1")
+
+        # Invalid values - over 600 seconds (10 minutes)
+        with pytest.raises(argparse.ArgumentTypeError, match="must be <= 600 seconds"):
+            positive_float_seconds("601")
+        with pytest.raises(argparse.ArgumentTypeError, match="must be <= 600 seconds"):
+            positive_float_seconds("900")
+
+    def test_seconds_validation_edge_cases(self) -> None:
+        """Test seconds validation with edge cases around 10-minute limit."""
+        from sleepstack.main import positive_float_seconds
+        import argparse
+
+        # Exactly 10 minutes in seconds (600 seconds) - should be valid
+        assert positive_float_seconds("600") == 600.0
+
+        # Just under 10 minutes in seconds (599 seconds)
+        assert positive_float_seconds("599") == 599.0
+
+        # 9 minutes 59 seconds
+        assert positive_float_seconds("599.9") == 599.9
+
+        # Just over 10 minutes in seconds (601 seconds) - should be invalid
+        with pytest.raises(argparse.ArgumentTypeError, match="must be <= 600 seconds"):
+            positive_float_seconds("601")
+
+    def test_minutes_validation_edge_cases(self) -> None:
+        """Test minutes validation with edge cases around 10-minute limit."""
+        from sleepstack.main import positive_float_minutes
+        import argparse
+
+        # Exactly 10 minutes
+        assert positive_float_minutes("10") == 10.0
+
+        # Just over 10 minutes
+        with pytest.raises(argparse.ArgumentTypeError, match="must be <= 10 minutes"):
+            positive_float_minutes("10.1")
+
+        # 9.9 minutes
+        assert positive_float_minutes("9.9") == 9.9
+
+        # 9 minutes 59 seconds (9.983... minutes)
+        assert positive_float_minutes("9.983") == 9.983
+
+    def test_vibe_binaural_validation(self) -> None:
+        """Test that vibe_binaural.py has the same validation."""
+        from sleepstack.vibe_binaural import positive_float_minutes, positive_float_seconds
+        import argparse
+
+        # Valid values for minutes
+        assert positive_float_minutes("5") == 5.0
+        assert positive_float_minutes("10") == 10.0
+
+        # Valid values for seconds
+        assert positive_float_seconds("300") == 300.0
+        assert positive_float_seconds("600") == 600.0
+
+        # Invalid values for minutes
+        with pytest.raises(argparse.ArgumentTypeError, match="must be > 0"):
+            positive_float_minutes("0")
+        with pytest.raises(argparse.ArgumentTypeError, match="must be <= 10 minutes"):
+            positive_float_minutes("11")
+
+        # Invalid values for seconds
+        with pytest.raises(argparse.ArgumentTypeError, match="must be > 0"):
+            positive_float_seconds("0")
+        with pytest.raises(argparse.ArgumentTypeError, match="must be <= 600 seconds"):
+            positive_float_seconds("601")
+
+    def test_make_binaural_validation(self) -> None:
+        """Test that make_binaural.py has the same validation."""
+        from sleepstack.make_binaural import positive_float_minutes, positive_float_seconds
+        import argparse
+
+        # Valid values for minutes
+        assert positive_float_minutes("5") == 5.0
+        assert positive_float_minutes("10") == 10.0
+
+        # Valid values for seconds
+        assert positive_float_seconds("300") == 300.0
+        assert positive_float_seconds("600") == 600.0
+
+        # Invalid values for minutes
+        with pytest.raises(argparse.ArgumentTypeError, match="must be > 0"):
+            positive_float_minutes("0")
+        with pytest.raises(argparse.ArgumentTypeError, match="must be <= 10 minutes"):
+            positive_float_minutes("11")
+
+        # Invalid values for seconds
+        with pytest.raises(argparse.ArgumentTypeError, match="must be > 0"):
+            positive_float_seconds("0")
+        with pytest.raises(argparse.ArgumentTypeError, match="must be <= 600 seconds"):
+            positive_float_seconds("601")

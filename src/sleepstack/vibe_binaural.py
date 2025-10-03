@@ -248,10 +248,21 @@ def list_vibes() -> None:
             print(f"  {a:<9} → {k}")
 
 
-def positive_float(x: str) -> float:
+def positive_float_minutes(x: str) -> float:
     v = float(x)
     if v <= 0:
         raise argparse.ArgumentTypeError("must be > 0")
+    if v > 10:
+        raise argparse.ArgumentTypeError("must be <= 10 minutes")
+    return v
+
+
+def positive_float_seconds(x: str) -> float:
+    v = float(x)
+    if v <= 0:
+        raise argparse.ArgumentTypeError("must be > 0")
+    if v > 600:  # 10 minutes * 60 seconds
+        raise argparse.ArgumentTypeError("must be <= 600 seconds (10 minutes)")
     return v
 
 
@@ -272,14 +283,14 @@ def main(argv: list[str] | None = None) -> int:
 
     # Duration
     g = p.add_mutually_exclusive_group(required=False)
-    g.add_argument("--minutes", "-m", type=positive_float, help="Duration in minutes")
-    g.add_argument("--seconds", "-s", type=positive_float, help="Duration in seconds")
+    g.add_argument("--minutes", "-m", type=positive_float_minutes, help="Duration in minutes")
+    g.add_argument("--seconds", "-s", type=positive_float_seconds, help="Duration in seconds")
 
     # Overrides
-    p.add_argument("--beat", type=positive_float, help="Override beat frequency in Hz")
-    p.add_argument("--carrier", type=positive_float, help="Override carrier frequency in Hz")
+    p.add_argument("--beat", type=float, help="Override beat frequency in Hz")
+    p.add_argument("--carrier", type=float, help="Override carrier frequency in Hz")
     p.add_argument("--samplerate", type=int, help="Override samplerate (e.g., 44100 or 48000)")
-    p.add_argument("--volume", type=positive_float, help="Override output volume scalar (0–1]")
+    p.add_argument("--volume", type=float, help="Override output volume scalar (0–1]")
     p.add_argument("--fade", type=nonneg_float, help="Override fade in/out seconds")
     p.add_argument("--out", default=None, help="Output filename (e.g., theta_6hz_5min.wav)")
     p.add_argument("--loop", action="store_true", help="Set fade=0 for seamless looping")

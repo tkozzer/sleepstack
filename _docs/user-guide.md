@@ -71,6 +71,8 @@ This will:
    - You must include **--vibe + one duration + one ambience source**.
    - `--vibe <name>`  (e.g., calm, deep, soothe, meditate, airy, warm, focus, flow, alert)
    - One duration: `--minutes N` (or `-m`) OR `--seconds N` (or `-s`)
+     - **Maximum duration**: 10 minutes (600 seconds) per track
+     - **Minimum duration**: Any value > 0
    - One ambience source:
      - `--ambient campfire` (auto-pick from your campfire clips)
      - OR `--ambience-file path/to/ambient.wav` (explicit file; mono is okay; it will be duplicated to L/R)
@@ -153,6 +155,7 @@ uv run sleepstack --vibe focus -a campfire -m 5
 
 12. Troubleshooting
    - **Headphones only**: binaural beats don't work on laptop speakers; you need stereo headphones.
+   - **Duration limits**: Maximum 10 minutes per track. If you get "must be <= 10 minutes" or "must be <= 600 seconds", reduce your duration.
    - If ambience is mono, the mixer duplicates it to L/R—this is expected.
    - If you get 'file not found' for campfire clips, confirm they exist at `assets/ambience/campfire/` and are 48 kHz WAVs.
    - "Sample rate mismatch" error: regenerate or resample so both files match (recommend 48000 Hz).
@@ -186,6 +189,13 @@ uv run sleepstack --vibe soothe -a campfire -m 1
 
 ```bash
 uv run sleepstack --vibe calm -a campfire -s 90
+```
+
+   - Maximum duration test (10 minutes):
+
+```bash
+uv run sleepstack --vibe calm -a campfire -m 10
+uv run sleepstack --vibe deep -a campfire -s 600
 ```
 
 14. Workflow tip for versioning

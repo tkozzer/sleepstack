@@ -9,8 +9,8 @@ Examples:
   # 5 minutes, theta 6 Hz, 200 Hz carrier
   python make_binaural.py --minutes 5 --beat 6 --carrier 200 --out theta_6hz_5min.wav
 
-  # 30 minutes, deeper theta 4.5 Hz, quieter volume
-  python make_binaural.py --minutes 30 --beat 4.5 --carrier 180 --volume 0.2 --out theta_4p5hz_30min.wav
+  # 10 minutes, deeper theta 4.5 Hz, quieter volume
+  python make_binaural.py --minutes 10 --beat 4.5 --carrier 180 --volume 0.2 --out theta_4p5hz_10min.wav
 """
 
 import argparse, math, struct, wave, sys
@@ -19,6 +19,24 @@ try:
     import numpy as np
 except Exception:
     np = None  # type: ignore
+
+
+def positive_float_minutes(v: str) -> float:
+    x = float(v)
+    if x <= 0:
+        raise argparse.ArgumentTypeError("must be > 0")
+    if x > 10:
+        raise argparse.ArgumentTypeError("must be <= 10 minutes")
+    return x
+
+
+def positive_float_seconds(v: str) -> float:
+    x = float(v)
+    if x <= 0:
+        raise argparse.ArgumentTypeError("must be > 0")
+    if x > 600:  # 10 minutes * 60 seconds
+        raise argparse.ArgumentTypeError("must be <= 600 seconds (10 minutes)")
+    return x
 
 
 def generate_binaural(
@@ -106,8 +124,8 @@ def save_wav(path: str, data_bytes: bytes, samplerate: int = 48000) -> None:
 def main() -> None:
     p = argparse.ArgumentParser(description="Generate a stereo binaural beats WAV.")
     g = p.add_mutually_exclusive_group(required=True)
-    g.add_argument("--minutes", type=float, help="Duration in minutes")
-    g.add_argument("--seconds", type=float, help="Duration in seconds")
+    g.add_argument("--minutes", type=positive_float_minutes, help="Duration in minutes")
+    g.add_argument("--seconds", type=positive_float_seconds, help="Duration in seconds")
     p.add_argument("--beat", type=float, default=6.0, help="Beat frequency in Hz (theta ~4–8)")
     p.add_argument(
         "--carrier", type=float, default=200.0, help="Carrier frequency in Hz (e.g., 180–300)"
