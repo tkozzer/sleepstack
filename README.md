@@ -107,7 +107,7 @@ This project uses GitHub Actions for continuous integration:
 - **Package building**: Creates wheel and source distributions
 - **CLI smoke tests**: Verifies all command-line functionality
 
-[![CI](https://github.com/your-username/subconscious-metaprogramming/workflows/CI/badge.svg)](https://github.com/your-username/subconscious-metaprogramming/actions)
+[![CI](https://github.com/tkozzer/sleepstack/workflows/CI/badge.svg)](https://github.com/tkozzer/sleepstack/actions)
 
 ## Requirements
 
