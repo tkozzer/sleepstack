@@ -14,11 +14,15 @@ Examples:
 """
 
 import argparse, math, struct, wave, sys
+from typing import TYPE_CHECKING
 
-try:
+if TYPE_CHECKING:
     import numpy as np
-except ImportError:
-    np = None  # Fallback when numpy is not available
+else:
+    try:
+        import numpy as np
+    except ImportError:
+        np = None  # Fallback when numpy is not available
 
 
 def positive_float_minutes(v: str) -> float:
