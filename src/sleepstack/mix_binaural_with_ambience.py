@@ -41,7 +41,7 @@ from typing import Tuple
 
 
 def db_to_gain(db: float) -> float:
-    return 10.0 ** (db / 20.0)
+    return float(10.0 ** (db / 20.0))
 
 
 def read_wav(path: str) -> Tuple[np.ndarray, int, int]:

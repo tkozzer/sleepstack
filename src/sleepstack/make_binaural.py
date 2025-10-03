@@ -18,7 +18,7 @@ import argparse, math, struct, wave, sys
 try:
     import numpy as np
 except Exception:
-    np = None
+    np = None  # type: ignore
 
 
 def generate_binaural(
@@ -28,7 +28,7 @@ def generate_binaural(
     samplerate: int = 48000,
     volume: float = 0.3,
     fade_sec: float = 3.0,
-):
+) -> bytes:
     """Return interleaved int16 stereo samples for a binaural beat track."""
     if beat_hz <= 0:
         raise ValueError("beat_hz must be > 0")
@@ -95,7 +95,7 @@ def generate_binaural(
     return bytes(frames)
 
 
-def save_wav(path: str, data_bytes: bytes, samplerate: int = 48000):
+def save_wav(path: str, data_bytes: bytes, samplerate: int = 48000) -> None:
     with wave.open(path, "wb") as wf:
         wf.setnchannels(2)
         wf.setsampwidth(2)  # 16-bit PCM
@@ -103,7 +103,7 @@ def save_wav(path: str, data_bytes: bytes, samplerate: int = 48000):
         wf.writeframes(data_bytes)
 
 
-def main():
+def main() -> None:
     p = argparse.ArgumentParser(description="Generate a stereo binaural beats WAV.")
     g = p.add_mutually_exclusive_group(required=True)
     g.add_argument("--minutes", type=float, help="Duration in minutes")
@@ -136,4 +136,4 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()

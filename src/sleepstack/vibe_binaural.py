@@ -29,6 +29,7 @@ import os
 import subprocess
 import sys
 from dataclasses import dataclass
+from typing import Any, Optional
 
 # ---------- Presets ----------
 # Each vibe maps to: beat Hz (binaural difference), carrier Hz, samplerate, volume, fade seconds.
@@ -143,17 +144,17 @@ def _script_dir() -> str:
     return os.path.dirname(os.path.abspath(__file__))
 
 
-def _module_from_path(module_name: str, path: str):
+def _module_from_path(module_name: str, path: str) -> Optional[Any]:
     """Load a module from an explicit file path."""
     spec = importlib.util.spec_from_file_location(module_name, path)
     if spec and spec.loader:
         mod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(mod)  # type: ignore[attr-defined]
+        spec.loader.exec_module(mod)
         return mod
     return None
 
 
-def _import_make_binaural():
+def _import_make_binaural() -> Optional[Any]:
     """
     Try to import make_binaural.py as a module next to this script.
     Returns the module or None.
@@ -232,7 +233,7 @@ def resolve_vibe(name: str | None) -> str:
     raise SystemExit(f"Unknown vibe '{name}'. Use --list to see options.")
 
 
-def list_vibes():
+def list_vibes() -> None:
     print("Available vibes:\n")
     for k, p in PRESETS.items():
         print(

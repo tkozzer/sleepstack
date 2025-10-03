@@ -10,7 +10,7 @@ from pathlib import Path
 
 def create_sine_wav(
     output_path: str, frequency: float = 440.0, duration: float = 1.0, sample_rate: int = 48000
-):
+) -> None:
     """Create a 1-second sine wave WAV file."""
     t = np.linspace(0, duration, int(sample_rate * duration), False)
     # Generate sine wave

@@ -62,6 +62,51 @@ uv run sleepstack --vibe deep --ambience-file my_ambience.wav -s 300
 uv run sleepstack --vibe focus -a campfire -m 5 --out my_track.wav
 ```
 
+## Testing
+
+### Run Tests
+```bash
+# Run all tests
+uv run pytest
+
+# Run with verbose output
+uv run pytest -v
+
+# Run specific test file
+uv run pytest tests/test_main.py
+```
+
+### Code Quality
+```bash
+# Format code
+uv run black src/ tests/
+
+# Type checking
+uv run mypy src/
+
+# Run all quality checks
+uv run black src/ tests/ && uv run mypy src/ && uv run pytest
+```
+
+### Test Coverage
+The test suite includes:
+- **Audio quality tests**: Duration, bit depth, stereo enforcement, sample rate validation
+- **CLI functionality**: All vibe presets, custom options, error handling
+- **Package installation**: Global and local installation verification
+- **Audio generation**: End-to-end binaural beat and mixing functionality
+
+## CI/CD
+
+This project uses GitHub Actions for continuous integration:
+
+- **Multi-platform testing**: Ubuntu and macOS with Python 3.11 and 3.12
+- **Automated testing**: Runs on every push and pull request
+- **Code quality**: Black formatting and mypy type checking
+- **Package building**: Creates wheel and source distributions
+- **CLI smoke tests**: Verifies all command-line functionality
+
+[![CI](https://github.com/your-username/subconscious-metaprogramming/workflows/CI/badge.svg)](https://github.com/your-username/subconscious-metaprogramming/actions)
+
 ## Requirements
 
 - Python 3.11+

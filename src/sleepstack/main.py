@@ -40,19 +40,19 @@ import sys
 import wave
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Any
 
 import numpy as np
 
 # ---------- Helpers for dynamic imports ----------
 
 
-def _module_from_path(module_name: str, path: str):
+def _module_from_path(module_name: str, path: str) -> Optional[Any]:
     spec = importlib.util.spec_from_file_location(module_name, path)
     if not spec or not spec.loader:
         return None
     mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)  # type: ignore[attr-defined]
+    spec.loader.exec_module(mod)
     return mod
 
 
@@ -185,7 +185,7 @@ def ensure_stereo(x: np.ndarray) -> np.ndarray:
 
 
 def db_to_gain(db: float) -> float:
-    return 10.0 ** (db / 20.0)
+    return float(10.0 ** (db / 20.0))
 
 
 def apply_fade(x: np.ndarray, sr: int, fade_sec: float) -> np.ndarray:
