@@ -1,30 +1,50 @@
 # USER GUIDE — Binaural + Ambience Pipeline (with narration tips)
 
-**Quick start:** `python main.py --vibe calm -a campfire -m 5` (headphones required).
+**Quick start:** `uv run sleepstack --vibe calm -a campfire -m 5` (headphones required).
 
 **Verify output:** Open the mixed file and confirm it's stereo and audible under headphones.
+
+## Installation Options
+
+### Option 1: Run directly with uv (recommended for development)
+```bash
+uv run sleepstack --help
+uv run sleepstack --list-vibes
+```
+
+### Option 2: Install globally
+```bash
+uv tool install .
+sleepstack --help
+```
+
+### Option 3: Install in a virtual environment
+```bash
+uv sync
+uv run sleepstack --help
+```
 
 1. What this setup does
       - Generates a binaural beat track from plain-English "vibes" (calm, deep, etc.).
       - Auto-mixes it with ambience (e.g., campfire) to the exact length you ask for.
-      - Saves finished files into your `sounds/` directory so you can drop them under narration in GarageBand (or your DAW).
+      - Saves finished files into your `build/` directory so you can drop them under narration in GarageBand (or your DAW).
 
 2. Prerequisites
-   - Python 3.9+
-   - NumPy installed:
+   - Python 3.11+ with `uv` package manager
+   - Install dependencies:
 
 ```bash
-pip install numpy 
+uv sync
 ```
 
-   - Your repo has: `make_binaural.py`, `mix_binaural_with_ambience.py`, `vibe_binaural.py`, `main.py`.
-   - Ambience clips are at: `sounds/ambient/campfire/{campfire_1m.wav, campfire_5m.wav, campfire_10m.wav}`.
+   - The package is structured as `src/sleepstack/` with CLI entry point.
+   - Ambience clips are at: `assets/ambience/campfire/{campfire_1m.wav, campfire_5m.wav, campfire_10m.wav}`.
    - Keep sample rate consistent (**48 kHz** for everything). **Stereo headphones required** (don't downmix).
    - All example commands assume your files are in the shown folders; if not, use `--out` / `--binaural-out` to set paths.
 
 3. Directory expectations (already matching your repo)
-   - Binaural outputs land in: `sounds/binaural/`
-   - Mixed outputs (binaural + ambience) land in: `sounds/binaural/mix/`
+   - Binaural outputs land in: `build/binaural/`
+   - Mixed outputs (binaural + ambience) land in: `build/mix/`
    - You can override output locations with the `--out` flag when needed.
 
 4. The one-command workflow (recommended)
@@ -33,21 +53,21 @@ pip install numpy
 Examples
 
 ```bash
-python main.py --vibe calm -a campfire -m 5
+uv run sleepstack --vibe calm -a campfire -m 5
 ```
 
 Or with custom output:
 ```bash
-python main.py --vibe calm -a campfire -m 5 --out sounds/binaural/mix/calm_5m__campfire.wav
+uv run sleepstack --vibe calm -a campfire -m 5 --out build/mix/calm_5m__campfire.wav
 ```
 
 This will:
    - Create a 5-minute calm binaural bed (6 Hz at 200 Hz).
    - Auto-pick the right campfire clip (1m/5m/10m) and tile/trim it to match 5 minutes.
    - Mix them at comfortable defaults (binaural -15 dB, ambience -21 dB, ambience has 2s fades).
-   - Save to `sounds/binaural/mix/` with a sensible filename.
+   - Save to `build/mix/` with a sensible filename.
 
-5. Required arguments for `main.py`
+5. Required arguments for `sleepstack`
    - You must include **--vibe + one duration + one ambience source**.
    - `--vibe <name>`  (e.g., calm, deep, soothe, meditate, airy, warm, focus, flow, alert)
    - One duration: `--minutes N` (or `-m`) OR `--seconds N` (or `-s`)
@@ -55,20 +75,26 @@ This will:
      - `--ambient campfire` (auto-pick from your campfire clips)
      - OR `--ambience-file path/to/ambient.wav` (explicit file; mono is okay; it will be duplicated to L/R)
 
+### New CLI Features
+- `--version`: Show package version
+- `--list-vibes`: Display all available vibe presets and aliases
+- `--verbose` / `-v`: Enable detailed output
+- `--quiet` / `-q`: Suppress non-error output
+
 Example with explicit ambience file:
 ```bash
-python main.py --vibe calm --ambience-file sounds/ambient/campfire/campfire_5m.wav -m 5
+uv run sleepstack --vibe calm --ambience-file assets/ambience/campfire/campfire_5m.wav -m 5
 ```
 
-6. Useful optional arguments (`main.py`)
+6. Useful optional arguments (`sleepstack`)
    - Binaural generation (overrides preset): `--beat`, `--carrier`, `--samplerate`, `--volume`, `--fade`, `--loop`
    - Paths: `--binaural-out` (raw binaural location), `--out` (final mixed location)
    - Mix levels: `--binaural-db` (default -15), `--ambience-db` (default -21), **`--ambience-fade`** (default 2.0)
 
 Example with custom paths:
 ```bash
-python main.py --vibe calm -a campfire -m 5 --binaural-out sounds/binaural/calm_5m_raw.wav
-python main.py --vibe calm -a campfire -m 5 --out sounds/binaural/mix/my_custom_name.wav
+uv run sleepstack --vibe calm -a campfire -m 5 --binaural-out build/binaural/calm_5m_raw.wav
+uv run sleepstack --vibe calm -a campfire -m 5 --out build/mix/my_custom_name.wav
 ```
 
 Tip: If you want a seamless loop bed, add `--loop` (sets binaural fade to 0). For single-play, leave fade at 2s.
@@ -77,24 +103,24 @@ Tip: If you want a seamless loop bed, add `--loop` (sets binaural fade to 0). Fo
    - Sleep-ready meta-core install (deeper settle):
 
 ```bash
-python main.py --vibe deep -a campfire -m 5
+uv run sleepstack --vibe deep -a campfire -m 5
 ```
 
    - Balanced under-narration default (most common):
 
 ```bash
-python main.py --vibe calm -a campfire -m 5
+uv run sleepstack --vibe calm -a campfire -m 5
 ```
 
    - Awake practice (not for sleep):
 
 ```bash
-python main.py --vibe focus -a campfire -m 5
+uv run sleepstack --vibe focus -a campfire -m 5
 ```
 
 8. Where the files end up
-   - Raw binaural: `sounds/binaural/<auto-generated name>.wav` (unless you set `--binaural-out`)
-   - Final mixed: `sounds/binaural/mix/<binaural_basename>__<ambience_name>.wav` (unless you set `--out`)
+   - Raw binaural: `build/binaural/<auto-generated name>.wav` (unless you set `--binaural-out`)
+   - Final mixed: `build/mix/<binaural_basename>__<ambience_name>.wav` (unless you set `--out`)
    - **File naming pattern:** `binaural__ambience.wav` (e.g., `meta_core_theta6_5min__campfire.wav`) so you can easily identify what's what in Finder.
 
 9. How to place under narration (GarageBand/DAW)
@@ -128,9 +154,9 @@ python main.py --vibe focus -a campfire -m 5
 12. Troubleshooting
    - **Headphones only**: binaural beats don't work on laptop speakers; you need stereo headphones.
    - If ambience is mono, the mixer duplicates it to L/R—this is expected.
-   - If you get 'file not found' for campfire clips, confirm they exist at `sounds/ambient/campfire/` and are 48 kHz WAVs.
+   - If you get 'file not found' for campfire clips, confirm they exist at `assets/ambience/campfire/` and are 48 kHz WAVs.
    - "Sample rate mismatch" error: regenerate or resample so both files match (recommend 48000 Hz).
-   - "Binaural must be stereo": ensure you generated the bed with `make_binaural.py` and haven't converted it to mono.
+   - "Binaural must be stereo": ensure you generated the bed with `sleepstack` and haven't converted it to mono.
    - The mix feels boomy: reduce ambience level by 2–4 dB or use a gentle low-shelf/HPF on ambience in your DAW.
    - If the bed fights your voice, try **airy** first or raise **carrier** 20–40 Hz.
    - If the mix is silent, check your output levels: try `--binaural-db -12 --ambience-db -18`.
@@ -141,25 +167,25 @@ python main.py --vibe focus -a campfire -m 5
    - Calm under narration:
 
 ```bash
-python main.py --vibe calm -a campfire -m 1
+uv run sleepstack --vibe calm -a campfire -m 1
 ```
 
    - Airy for deep voices:
 
 ```bash
-python main.py --vibe airy -a campfire -m 1
+uv run sleepstack --vibe airy -a campfire -m 1
 ```
 
    - Soothe for softer cadence:
 
 ```bash
-python main.py --vibe soothe -a campfire -m 1
+uv run sleepstack --vibe soothe -a campfire -m 1
 ```
 
    - Quick 90-second test:
 
 ```bash
-python main.py --vibe calm -a campfire -s 90
+uv run sleepstack --vibe calm -a campfire -s 90
 ```
 
 14. Workflow tip for versioning

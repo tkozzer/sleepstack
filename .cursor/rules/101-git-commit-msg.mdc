@@ -1,0 +1,111 @@
+---
+description: Requires well-structured, multi-line git commit messages summarizing all staged changes with semantic prefixes and 
+descriptive body.
+globs:
+alwaysApply: false
+---
+## ⚠️ CRITICAL: CONCISENESS IS MANDATORY ⚠️
+
+**ALWAYS FOLLOW CONCISENESS RULES UNLESS EXPLICITLY ASKED TO IGNORE THEM**
+
+- Maximum 10 lines total for entire commit message
+- Body must be 2-4 lines maximum 
+- Focus on impact, not implementation details
+- Omit obvious information that can be inferred from the diff
+- **Failure to follow conciseness rules is a critical error**
+
+---
+
+### Explicit Execution Exception
+
+If the user explicitly instructs to stage and commit changes (e.g., "run git add and commit"), follow their command:
+
+- You may run `git add` and `git commit` via the terminal
+- Stage exactly what they request; default to `git add -A` if unspecified
+- Use their provided commit message; if none is given, generate one per this rule
+- Do not push unless explicitly requested
+
+If there is no explicit instruction to execute, default to the original behavior: do not run `git add` or `git commit`; only show the commands for review.
+
+- When asked to generate a git commit message:
+  1. First, execute and review `git status` and `git diff` to understand what is staged and what is changing.
+  2. DO NOT USE TERMINAL TOOL FOR `git commit` or `git add` (unless the Explicit Execution Exception above applies). You can use terminal tool for `git status` and `git diff`.
+  3. Based on the changes, create a well-structured commit message following this format:
+
+     ```md
+     <type>(<scope>): <short summary>
+
+     Concise description of what changed and why.
+     Keep body brief but informative (2-4 lines max).
+
+     Refs: #issue-number (if applicable)
+     BREAKING CHANGE: <description> (if applicable)
+     ```
+
+     **Format Guidelines:**
+     - `type`: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert
+     - `scope`: the affected folder or module (e.g., components, pages, api, utils)
+     - `summary`: imperative sentence summarizing the change (max 50 characters)
+     - **Body**: 2-4 concise lines maximum, focus on the "what" and "why"
+     - Leave one blank line between the summary and the description body
+     - Use bullet points only for multiple distinct changes (max 3 bullets)
+
+  4. **Conciseness Rules (MANDATORY):**
+     - Keep the entire message under 10 lines total
+     - Body should be 2-4 lines maximum
+     - Focus on impact, not implementation details
+     - Omit obvious information that can be inferred from the diff
+     - Use active voice and present tense
+     - **These rules must be followed unless explicitly told to ignore them**
+
+  5. Output a full Git command block:
+     - When executing here: use multiple `-m` flags; do NOT embed `\n` inside a single `-m` (they will be committed literally)
+     - When showing for copy/paste: prefer multiple `-m` flags, or use `-F -` with a heredoc
+     - Avoid literal `\n` escape sequences entirely
+     - Do not execute any commands—**just return them for review** (unless the Explicit Execution Exception applies)
+
+- **Example Output (Concise Multi-line):**
+
+```bash
+git commit \
+  -m "feat(api): add user authentication endpoints" \
+  -m "Implements login/logout with JWT tokens and session management." \
+  -m "Includes input validation and rate limiting." \
+  -m "Refs: #23"
+```
+
+Heredoc alternative (for copy/paste only; not for automated execution here):
+
+```bash
+git commit -F - <<'MSG'
+feat(api): add user authentication endpoints
+
+Implements login/logout with JWT tokens and session management.
+Includes input validation and rate limiting.
+
+Refs: #23
+MSG
+```
+
+- **For Complex Changes (Still Concise):**
+
+```bash
+git commit \
+  -m "refactor(components): migrate to Composition API" \
+  -m "* Converts 5 components from Options to Composition API" \
+  -m "* Improves type safety and performance" \
+  -m "* Updates related tests and documentation"
+```
+
+- **Additional Guidelines:**
+  - For single-file changes: Keep body to 1-2 lines
+  - For multi-file changes: Summarize themes, not individual files
+  - For first commits: Focus on main features/structure established
+  - Skip body entirely for trivial changes (typos, formatting)
+  - Be honest about incomplete work but keep it brief
+
+- Use present tense and active voice ("Adds support for...", not "Added..." or "Support was added...")
+
+- Do not include HTML; use plain Markdown for formatting in body.
+
+ - Do not run `git commit` or `git add`—only show the commands, unless the Explicit Execution Exception applies.
