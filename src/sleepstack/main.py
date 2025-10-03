@@ -157,7 +157,7 @@ def resolve_vibe(v: str) -> str:
 
 def read_wav(path: str) -> Tuple[np.ndarray, int, int]:
     import time
-    
+
     # Retry mechanism for file system synchronization issues in CI
     max_retries = 3
     for attempt in range(max_retries):
@@ -176,11 +176,14 @@ def read_wav(path: str) -> Tuple[np.ndarray, int, int]:
         except Exception as e:
             if attempt < max_retries - 1:
                 # Wait with exponential backoff before retrying
-                time.sleep(0.1 * (2 ** attempt))
+                time.sleep(0.1 * (2**attempt))
                 continue
             else:
                 # Re-raise the original exception on final attempt
                 raise e
+
+    # This should never be reached, but satisfies mypy
+    raise RuntimeError("Unexpected end of retry loop")
 
 
 def write_wav(path: str, data: np.ndarray, sr: int) -> None:
