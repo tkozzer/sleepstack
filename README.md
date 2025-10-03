@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-# sleepstack
-A Python tool for generating binaural beats and mixing them with ambient sounds for sleep and focus
-=======
 # SleepStack
 
 Binaural beats + ambience mixer for narration-ready sleep tracks.
@@ -118,4 +114,3 @@ This project uses GitHub Actions for continuous integration:
 - Python 3.11+
 - uv package manager
 - Stereo headphones (binaural beats require stereo separation)
->>>>>>> 8022590 (refactor(package): complete migration to uv package structure)
