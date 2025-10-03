@@ -18,7 +18,7 @@ import argparse, math, struct, wave, sys
 try:
     import numpy as np
 except ImportError:
-    np = None
+    np = None  # Fallback when numpy is not available
 
 
 def positive_float_minutes(v: str) -> float:
