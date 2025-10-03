@@ -17,7 +17,7 @@ import argparse, math, struct, wave, sys
 
 try:
     import numpy as np
-except Exception:
+except ImportError:
     np = None
 
 
