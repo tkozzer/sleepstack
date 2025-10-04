@@ -4,10 +4,10 @@
   "duration_seconds": 60.0,
   "sample_rate": 48000,
   "channels": 2,
-  "file_size_bytes": 11520044,
-  "created_date": "2025-10-03T18:04:14.054096",
-  "source_url": null,
-  "description": null,
-  "last_modified": "2025-10-03T18:04:14.054110",
-  "file_hash": "be12bc613d02fe714cdc4bb468c182fd"
+  "file_size_bytes": 11520078,
+  "created_date": "2025-10-03T22:48:49.847762",
+  "source_url": "https://www.youtube.com/watch?v=8KrLtLr-Gy8",
+  "description": "Campfire sounds",
+  "last_modified": "2025-10-03T22:48:49.847771",
+  "file_hash": "917f1895cb81e0b28ae7bfb1d2cf3bda"
 }

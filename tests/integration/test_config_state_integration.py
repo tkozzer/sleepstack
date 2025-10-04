@@ -154,9 +154,15 @@ class TestConfigStateIntegration:
                                     mock_get_state.return_value = mock_state_manager
 
                                     # Mock download_audio to create a temporary file
-                                    def mock_download_side_effect(url, temp_path):
+                                    def mock_download_side_effect(
+                                        url,
+                                        output_path,
+                                        start_time=60,
+                                        duration=60,
+                                        progress_callback=None,
+                                    ):
                                         # Create a temporary file that the download function can find
-                                        temp_file = Path(str(temp_path) + ".webm")
+                                        temp_file = Path(str(output_path) + ".webm")
                                         temp_file.write_bytes(b"fake audio content")
 
                                     mock_download.side_effect = mock_download_side_effect
@@ -434,9 +440,15 @@ class TestConfigStateIntegration:
                                     }
 
                                     # Mock download_audio to create a temporary file
-                                    def mock_download_side_effect(url, temp_path):
+                                    def mock_download_side_effect(
+                                        url,
+                                        output_path,
+                                        start_time=60,
+                                        duration=60,
+                                        progress_callback=None,
+                                    ):
                                         # Create a temporary file that the download function can find
-                                        temp_file = Path(str(temp_path) + ".webm")
+                                        temp_file = Path(str(output_path) + ".webm")
                                         temp_file.write_bytes(b"fake audio content")
 
                                     mock_download.side_effect = mock_download_side_effect

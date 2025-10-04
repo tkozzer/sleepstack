@@ -13,6 +13,7 @@ import subprocess
 import tempfile
 import hashlib
 import time
+import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Optional, Tuple, Callable
@@ -292,7 +293,8 @@ def cache_audio(url: str, audio_path: Path) -> None:
 def download_audio(
     url: str,
     output_path: Path,
-    max_duration: int = 300,
+    start_time: int = 60,
+    duration: int = 60,
     progress_callback: Optional[Callable[[int, int], None]] = None,
 ) -> None:
     """
@@ -301,7 +303,8 @@ def download_audio(
     Args:
         url: YouTube video URL
         output_path: Path where to save the downloaded audio
-        max_duration: Maximum duration in seconds (default: 5 minutes)
+        start_time: Start time in seconds (default: 60)
+        duration: Duration to download in seconds (default: 60)
         progress_callback: Optional callback function for progress updates
 
     Raises:
@@ -311,13 +314,20 @@ def download_audio(
     config_manager = get_config_manager()
     config = config_manager.get_config()
 
+    # NOTE: yt-dlp version 2025.09.26 has a bug where download_sections doesn't work in Python API
+    # The parameter is ignored and full videos are downloaded. We work around this by:
+    # 1. Downloading the full video (as it currently does due to the bug)
+    # 2. Using FFmpeg to trim it to the desired segment during post-processing
+    # TODO: Remove this workaround when yt-dlp fixes the download_sections bug
     ydl_opts = {
         "format": "bestaudio/best",
         "outtmpl": str(output_path),
         "quiet": True,
         "no_warnings": True,
         "socket_timeout": config.preferences.download_timeout,
-        "max_downloads": 1,  # Limit concurrent downloads
+        # download_sections is commented out due to yt-dlp bug - see note above
+        # "download_sections": f"*{start_time}-{start_time + duration}",
+        # "force_keyframes_at_cuts": True,
     }
 
     # Add progress hook if callback provided
@@ -405,6 +415,7 @@ def download_and_process_ambient_sound(
     config_manager = get_config_manager()
     state_manager = get_state_manager()
     asset_manager = get_asset_manager()
+    config = config_manager.get_config()
 
     # Validate prerequisites
     validate_prerequisites()
@@ -460,13 +471,16 @@ def download_and_process_ambient_sound(
         else:
             # Create temporary file for download (yt-dlp will add extension)
             # Use a unique name to avoid conflicts
-            import uuid
-
             temp_base = Path(tempfile.gettempdir()) / f"sleepstack_download_{uuid.uuid4().hex}"
 
             try:
                 # Download audio (yt-dlp will add the appropriate extension)
-                download_audio(url, temp_base)
+                download_audio(
+                    url,
+                    temp_base,
+                    start_time=config.download.default_start_time,
+                    duration=config.download.default_duration,
+                )
 
                 # Find the actual downloaded file (yt-dlp may or may not add extension)
                 downloaded_files = list(temp_base.parent.glob(f"{temp_base.name}.*"))
@@ -493,7 +507,6 @@ def download_and_process_ambient_sound(
 
         # Check file size before processing
         temp_file_size = actual_temp_path.stat().st_size
-        config = config_manager.get_config()
         max_size_bytes = config.download.max_file_size_mb * 1024 * 1024
 
         if temp_file_size > max_size_bytes:

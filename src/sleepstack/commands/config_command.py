@@ -47,7 +47,7 @@ def show(output_format: str) -> None:
         click.echo(json.dumps(asdict(config), indent=2))
     elif output_format == "yaml":
         try:
-            import yaml  # type: ignore[import-untyped]
+            import yaml
             from dataclasses import asdict
 
             click.echo(yaml.dump(asdict(config), default_flow_style=False))

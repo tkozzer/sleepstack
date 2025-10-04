@@ -97,7 +97,7 @@ def config_show(args: Any) -> int:
         print(json.dumps(asdict(config), indent=2))
     elif args.format == "yaml":
         try:
-            import yaml  # type: ignore[import-untyped]
+            import yaml
             from dataclasses import asdict
 
             print(yaml.dump(asdict(config), default_flow_style=False))

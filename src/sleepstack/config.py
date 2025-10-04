@@ -24,7 +24,7 @@ class DownloadConfig:
     download_quality: str = "bestaudio"
     volume_adjustment: float = 0.8
     auto_cleanup_temp_files: bool = True
-    max_file_size_mb: int = 100  # Maximum file size in MB
+    max_file_size_mb: int = 600  # Maximum file size in MB
     enable_caching: bool = True  # Enable download caching
     cache_ttl_hours: int = 24  # Cache time-to-live in hours
 
