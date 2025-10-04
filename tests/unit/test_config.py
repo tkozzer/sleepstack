@@ -8,6 +8,7 @@ from io import StringIO
 from pathlib import Path
 from unittest.mock import Mock, patch, mock_open
 from datetime import datetime
+from importlib.metadata import version
 
 from sleepstack.config import (
     ConfigManager,
@@ -58,7 +59,7 @@ class TestConfigClasses:
         config = AppConfig(
             download=DownloadConfig(), processing=ProcessingConfig(), preferences=UserPreferences()
         )
-        assert config.version == "0.1.0"
+        assert config.version == version("sleepstack")
         assert config.last_updated != ""
         assert isinstance(config.download, DownloadConfig)
         assert isinstance(config.processing, ProcessingConfig)
@@ -169,7 +170,7 @@ class TestConfigManager:
         assert config.download.default_duration == 30
         assert config.processing.output_format == "mp3"
         assert config.preferences.default_assets_dir == "/custom/assets"
-        assert config.version == "0.2.0"
+        assert config.version == version("sleepstack")
 
     def test_load_or_create_config_invalid_file(self):
         """Test loading configuration from invalid file."""
@@ -234,7 +235,7 @@ class TestConfigManager:
         assert data["download"]["default_sample_rate"] == 44100
         assert data["processing"]["output_format"] == "mp3"
         assert data["preferences"]["default_assets_dir"] == "/custom"
-        assert data["version"] == "0.1.0"
+        assert data["version"] == version("sleepstack")
 
     def test_get_config(self):
         """Test getting current configuration."""
@@ -272,7 +273,7 @@ class TestConfigManager:
     def test_update_config_simple(self):
         """Test updating configuration with simple key."""
         self.manager.update_config(version="0.2.0")
-        assert self.manager._config.version == "0.2.0"
+        assert self.manager._config.version == version("sleepstack")
 
     def test_update_config_nested(self):
         """Test updating configuration with nested key."""
@@ -290,7 +291,7 @@ class TestConfigManager:
 
         # Verify reset to defaults
         assert self.manager._config.download.default_sample_rate == 48000
-        assert self.manager._config.version == "0.1.0"
+        assert self.manager._config.version == version("sleepstack")
 
     def test_validate_config_valid(self):
         """Test validating valid configuration."""
