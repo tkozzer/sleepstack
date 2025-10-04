@@ -1,0 +1,13 @@
+{
+  "name": "campfire",
+  "path": "/Users/tkozzer/Projects/sleepstack/assets/ambience/campfire/campfire_1m.wav",
+  "duration_seconds": 60.0,
+  "sample_rate": 48000,
+  "channels": 2,
+  "file_size_bytes": 11520078,
+  "created_date": "2025-10-03T22:48:49.847762",
+  "source_url": "https://www.youtube.com/watch?v=8KrLtLr-Gy8",
+  "description": "Campfire sounds",
+  "last_modified": "2025-10-03T22:48:49.847771",
+  "file_hash": "917f1895cb81e0b28ae7bfb1d2cf3bda"
+}

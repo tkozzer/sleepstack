@@ -1,0 +1,13 @@
+{
+  "test_sound": {
+    "name": "test_sound",
+    "path": "/path/to/test.wav",
+    "duration_seconds": 60.0,
+    "sample_rate": 48000,
+    "channels": 2,
+    "file_size_bytes": 1000000,
+    "created_date": null,
+    "source_url": null,
+    "description": null
+  }
+}

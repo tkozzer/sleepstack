@@ -82,6 +82,8 @@ This will:
 - `--list-vibes`: Display all available vibe presets and aliases
 - `--verbose` / `-v`: Enable detailed output
 - `--quiet` / `-q`: Suppress non-error output
+- **Multi-ambient support**: Use comma-separated lists for multiple ambient sounds (e.g., `-a campfire,rain,ocean`)
+- **Ambient sound management**: Download, list, and remove ambient sounds from YouTube
 
 Example with explicit ambience file:
 ```bash
@@ -202,3 +204,148 @@ uv run sleepstack --vibe deep -a campfire -s 600
    - Keep a short notes file next to your tracks listing date, vibe, beat/carrier, levels, and whether it "felt right" under your current script. It makes dialing in the next iteration trivial.
 
 That's it — use `calm` as your default under narration, `airy` if your voice is deep, and `deep` only when you intentionally want to drift after the key lines.
+
+## Ambient Sound Management
+
+SleepStack now supports downloading ambient sounds from YouTube and managing multiple ambient sounds per track.
+
+### Prerequisites for Ambient Sound Downloads
+
+Before downloading ambient sounds, you need to install system dependencies:
+
+**macOS (using Homebrew):**
+```bash
+brew install ffmpeg
+```
+
+**Ubuntu/Debian:**
+```bash
+sudo apt update
+sudo apt install ffmpeg
+```
+
+**Windows:**
+- Download ffmpeg from https://ffmpeg.org/download.html
+- Add to your system PATH
+
+The `yt-dlp` package is automatically installed with SleepStack.
+
+### Downloading Ambient Sounds
+
+Use the `download-ambient` subcommand to download sounds from YouTube:
+
+```bash
+# Download a rain sound
+uv run sleepstack download-ambient "https://www.youtube.com/watch?v=example" rain
+
+# Download with description
+uv run sleepstack download-ambient "https://youtu.be/example" ocean --description "Ocean waves"
+
+# Download thunderstorm sounds
+uv run sleepstack download-ambient "https://www.youtube.com/watch?v=example" thunder --description "Thunderstorm sounds"
+```
+
+**What happens during download:**
+- Audio is extracted from the YouTube video
+- Converted to 48kHz stereo WAV format
+- Trimmed to 1 minute starting at 60 seconds (to skip intros/ads)
+- Saved to `assets/ambience/<name>/<name>_1m.wav`
+- Metadata is stored for future reference
+
+### Listing Available Ambient Sounds
+
+```bash
+# List all available sounds
+uv run sleepstack list-ambient
+
+# Show detailed information
+uv run sleepstack list-ambient --detailed
+```
+
+### Using Multiple Ambient Sounds
+
+You can now mix multiple ambient sounds in a single track:
+
+```bash
+# Mix campfire and rain
+uv run sleepstack --vibe calm -a campfire,rain -m 5
+
+# Mix three ambient sounds
+uv run sleepstack --vibe deep -a campfire,rain,thunder -m 10
+
+# Mix with custom volume levels
+uv run sleepstack --vibe soothe -a campfire,ocean -m 5 --ambience-db -18
+```
+
+**Volume mixing:**
+- Each ambient sound is mixed at the same level by default
+- Use `--ambience-db` to control the overall ambient level
+- Individual volume control per sound is planned for future releases
+
+### Removing Ambient Sounds
+
+```bash
+# Remove an ambient sound (with confirmation)
+uv run sleepstack remove-ambient rain
+
+# Remove without confirmation
+uv run sleepstack remove-ambient thunder --force
+```
+
+**What gets removed:**
+- The ambient sound directory and all files
+- Metadata and references
+- Any mixed tracks that used this sound (you'll need to regenerate them)
+
+### Configuration and State Management
+
+SleepStack includes comprehensive configuration and state management:
+
+```bash
+# Show current configuration
+uv run sleepstack config show
+
+# Set configuration values
+uv run sleepstack config set download.sample_rate 48000
+uv run sleepstack config set processing.volume_adjustment 0.8
+
+# Show download history
+uv run sleepstack config history
+
+# Show application state
+uv run sleepstack state show
+
+# Check asset health
+uv run sleepstack state health
+
+# Clean up old maintenance records
+uv run sleepstack state cleanup
+```
+
+### Troubleshooting Ambient Sound Issues
+
+**Download fails:**
+- Verify ffmpeg is installed: `ffmpeg -version`
+- Check YouTube URL is valid and accessible
+- Ensure video is longer than 2 minutes (needs 60s + 1m content)
+- Try a different video if the current one has restrictions
+
+**Audio quality issues:**
+- Downloaded audio is automatically converted to 48kHz stereo
+- If source audio is poor quality, try a different video
+- Check file size - very small files may indicate low quality
+
+**Missing ambient sounds:**
+- Use `sleepstack list-ambient` to see available sounds
+- Check `assets/ambience/` directory structure
+- Re-download if files are corrupted or missing
+
+**Mixing issues:**
+- Ensure all ambient sounds are 48kHz WAV format
+- Check file permissions in `assets/ambience/` directory
+- Use `--verbose` flag to see detailed processing information
+
+**Performance with multiple sounds:**
+- More ambient sounds = longer processing time
+- Large numbers of sounds (>5) may impact memory usage
+- Consider using fewer, higher-quality sounds for better results

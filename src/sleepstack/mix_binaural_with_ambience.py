@@ -37,6 +37,12 @@ import wave
 import numpy as np
 from typing import Tuple
 
+from .ambient_manager import (
+    get_available_ambient_sounds,
+    get_ambient_sound_path,
+    validate_ambient_sound,
+)
+
 # ---------- Utility ----------
 
 
@@ -194,6 +200,109 @@ def mix_audio(
     return mix
 
 
+def mix_multiple_ambient_sounds(
+    binaural: np.ndarray,
+    ambient_sounds: list[np.ndarray],
+    sr: int,
+    binaural_db: float,
+    ambience_db: float,
+    fade_sec: float,
+    chunk_size: int = 1024 * 1024,  # 1MB chunks for memory efficiency
+) -> np.ndarray:
+    """
+    Memory-efficient mixing of multiple ambient sounds with binaural.
+
+    Args:
+        binaural: Binaural audio array
+        ambient_sounds: List of ambient sound arrays
+        sr: Sample rate
+        binaural_db: Binaural level in dB
+        ambience_db: Ambient level in dB
+        fade_sec: Fade duration in seconds
+        chunk_size: Chunk size for processing (samples)
+
+    Returns:
+        Mixed audio array
+    """
+    if not ambient_sounds:
+        return binaural
+
+    # Ensure binaural is stereo
+    if binaural.shape[1] != 2:
+        raise SystemExit("Binaural must be stereo to preserve the binaural effect.")
+
+    # Ensure all ambient sounds are stereo
+    ambient_sounds = [ensure_stereo(amb) for amb in ambient_sounds]
+
+    n_samples = binaural.shape[0]
+    n_channels = 2
+
+    # Pre-calculate gains
+    g_b = db_to_gain(binaural_db)
+    g_a = db_to_gain(ambience_db)
+
+    # Initialize output array
+    mix = np.zeros((n_samples, n_channels), dtype=np.float64)
+
+    # Process in chunks to manage memory usage
+    for start_idx in range(0, n_samples, chunk_size):
+        end_idx = min(start_idx + chunk_size, n_samples)
+        chunk_size_actual = end_idx - start_idx
+
+        # Get binaural chunk
+        binaural_chunk = binaural[start_idx:end_idx, :]
+
+        # Mix all ambient sounds for this chunk
+        ambient_chunk = np.zeros((chunk_size_actual, n_channels), dtype=np.float64)
+
+        for amb in ambient_sounds:
+            # Handle tiling/trimming for this chunk
+            amb_start = start_idx % amb.shape[0]
+            if amb_start + chunk_size_actual <= amb.shape[0]:
+                # Single copy fits
+                amb_chunk = amb[amb_start : amb_start + chunk_size_actual, :]
+            else:
+                # Need to tile
+                remaining = chunk_size_actual
+                amb_chunk = np.zeros((chunk_size_actual, n_channels), dtype=np.float64)
+                chunk_start = 0
+
+                while remaining > 0:
+                    copy_size = min(remaining, amb.shape[0] - amb_start)
+                    amb_chunk[chunk_start : chunk_start + copy_size, :] = amb[
+                        amb_start : amb_start + copy_size, :
+                    ]
+                    remaining -= copy_size
+                    chunk_start += copy_size
+                    amb_start = 0  # Reset for next iteration
+
+            ambient_chunk += amb_chunk
+
+        # Apply fade to ambient chunk
+        if fade_sec > 0:
+            fade_samples = int(fade_sec * sr)
+            if start_idx < fade_samples:
+                # Fade in
+                fade_in_samples = min(fade_samples - start_idx, chunk_size_actual)
+                fade_in = np.linspace(0.0, 1.0, fade_in_samples)
+                ambient_chunk[:fade_in_samples, :] *= fade_in[:, None]
+            elif end_idx > n_samples - fade_samples:
+                # Fade out
+                fade_out_samples = min(end_idx - (n_samples - fade_samples), chunk_size_actual)
+                fade_out = np.linspace(1.0, 0.0, fade_out_samples)
+                ambient_chunk[-fade_out_samples:, :] *= fade_out[:, None]
+
+        # Mix chunk
+        mix[start_idx:end_idx, :] = binaural_chunk * g_b + ambient_chunk * g_a
+
+    # Soft limiter (gentle)
+    peak = float(np.max(np.abs(mix)))
+    if peak > 0.999:
+        mix = mix / peak * 0.999
+
+    return mix
+
+
 # ---------- Defaults & Paths ----------
 
 
@@ -226,8 +335,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument(
         "-a",
         "--ambient",
-        choices=["campfire"],
-        help="Ambient keyword. Currently supported: 'campfire'.",
+        help="Ambient keyword (e.g., campfire, rain, ocean). Use comma-separated list for multiple sounds.",
     )
     ap.add_argument("--ambience-file", help="Explicit ambience WAV path (mono or stereo).")
     ap.add_argument(
@@ -268,13 +376,27 @@ def main(argv: list[str] | None = None) -> int:
     if args.ambient and args.ambience_file:
         raise SystemExit("Use either --ambient or --ambience-file, not both.")
     if args.ambient:
-        ambient_key = args.ambient
-        # Auto-pick campfire clip based on binaural length
-        ambience_path = choose_campfire_clip(target_samples=b.shape[0], sr=sr_b)
+        # Parse comma-separated ambient sounds
+        ambient_names = [name.strip() for name in args.ambient.split(",")]
+
+        # Validate all ambient sounds
+        for name in ambient_names:
+            if not validate_ambient_sound(name):
+                available = get_available_ambient_sounds()
+                raise SystemExit(
+                    f"Unknown ambient sound '{name}'. Available: {', '.join(available)}"
+                )
+
+        # For now, use the first ambient sound (will be enhanced for multi-ambient support)
+        ambient_key = ambient_names[0]
+        ambience_path_obj = get_ambient_sound_path(ambient_key)
+        if not ambience_path_obj:
+            raise SystemExit(f"Ambient sound file not found: {ambient_key}")
+        ambience_path = str(ambience_path_obj)
     elif args.ambience_file:
         ambience_path = args.ambience_file
     else:
-        raise SystemExit("Provide --ambient campfire or --ambience-file <path>")
+        raise SystemExit("Provide --ambient <sound_name> or --ambience-file <path>")
 
     if not os.path.exists(ambience_path):
         raise SystemExit(f"Ambience file not found: {ambience_path}")

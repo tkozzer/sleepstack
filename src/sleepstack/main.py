@@ -40,9 +40,15 @@ import sys
 import wave
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Tuple, Optional, Any
+from typing import List, Tuple, Optional, Any
 
 import numpy as np
+
+from .ambient_manager import (
+    get_available_ambient_sounds,
+    get_ambient_sound_path,
+    validate_ambient_sound,
+)
 
 # ---------- Helpers for dynamic imports ----------
 
@@ -305,6 +311,131 @@ def choose_campfire_clip(target_samples: int, sr: int) -> str:
 # ---------- Mixing ----------
 
 
+def mix_multiple_ambient_sounds(
+    ambient_paths: List[str],
+    target_samples: int,
+    sr: int,
+    *,
+    individual_db: float = -21.0,
+    fade_sec: float = 2.0,
+) -> np.ndarray:
+    """
+    Mix multiple ambient sounds together.
+
+    Args:
+        ambient_paths: List of paths to ambient sound files
+        target_samples: Target number of samples to match
+        sr: Sample rate
+        individual_db: Individual volume level for each ambient sound
+        fade_sec: Fade in/out duration
+
+    Returns:
+        Mixed ambient sound array
+    """
+    if not ambient_paths:
+        raise ValueError("No ambient sounds provided")
+
+    mixed_ambient: np.ndarray | None = None
+
+    for path in ambient_paths:
+        a, sr_a, ch_a = read_wav(path)
+
+        # Ensure stereo
+        a = ensure_stereo(a)
+
+        # Match target length
+        if a.shape[0] < target_samples:
+            reps = int(np.ceil(target_samples / a.shape[0]))
+            a = np.tile(a, (reps, 1))[:target_samples, :]
+        else:
+            a = a[:target_samples, :]
+
+        # Apply fade
+        a = apply_fade(a, sr, fade_sec)
+
+        # Apply gain
+        gain = db_to_gain(individual_db)
+        a = a * gain
+
+        # Mix with other ambient sounds
+        if mixed_ambient is None:
+            mixed_ambient = a
+        else:
+            mixed_ambient = mixed_ambient + a
+
+    # Soft limit the mixed ambient
+    if mixed_ambient is not None:
+        peak = float(np.max(np.abs(mixed_ambient)))
+        if peak > 0.999:
+            mixed_ambient = mixed_ambient / peak * 0.999
+
+    # This should never be None due to the ValueError check above
+    assert mixed_ambient is not None
+    return mixed_ambient
+
+
+def mix_binaural_and_multiple_ambience(
+    binaural_path: str,
+    ambient_paths: List[str],
+    *,
+    binaural_db: float = -15.0,
+    individual_ambience_db: float = -21.0,
+    ambience_fade: float = 2.0,
+    out_path: Optional[str] = None,
+) -> str:
+    """
+    Mix binaural beats with multiple ambient sounds.
+
+    Args:
+        binaural_path: Path to binaural WAV file
+        ambient_paths: List of paths to ambient sound files
+        binaural_db: Binaural level in dBFS
+        individual_ambience_db: Individual ambient sound level in dBFS
+        ambience_fade: Ambient fade in/out duration
+        out_path: Output path (optional)
+
+    Returns:
+        Path to the mixed output file
+    """
+    # Read binaural
+    b, sr_b, ch_b = read_wav(binaural_path)
+    if ch_b != 2:
+        raise SystemExit("Binaural must be stereo (2 channels).")
+
+    # Mix ambient sounds
+    mixed_ambient = mix_multiple_ambient_sounds(
+        ambient_paths=ambient_paths,
+        target_samples=b.shape[0],
+        sr=sr_b,
+        individual_db=individual_ambience_db,
+        fade_sec=ambience_fade,
+    )
+
+    # Mix binaural with combined ambient
+    g_b = db_to_gain(binaural_db)
+    mix = b * g_b + mixed_ambient
+
+    # Soft limit
+    peak = float(np.max(np.abs(mix)))
+    if peak > 0.999:
+        mix = mix / peak * 0.999
+
+    # Output path
+    if out_path:
+        out = str(Path(out_path).expanduser().resolve())
+    else:
+        base = Path(binaural_path).stem
+        amb_tag = "_".join([Path(p).stem for p in ambient_paths])
+        out = str(project_root() / "build" / "mix" / f"{base}__{amb_tag}.wav")
+        (project_root() / "build" / "mix").mkdir(parents=True, exist_ok=True)
+
+    write_wav(out, mix, sr_b)
+    logging.info(
+        f"✓ Mixed : {out} @ {sr_b} Hz  (binaural {binaural_db} dB, {len(ambient_paths)} ambient sounds {individual_ambience_db} dB each, fade {ambience_fade}s)"
+    )
+    return out
+
+
 def mix_binaural_and_ambience(
     binaural_path: str,
     ambience_path: str,
@@ -408,8 +539,7 @@ def main(argv: list[str] | None = None) -> int:
     amb.add_argument(
         "--ambient",
         "-a",
-        choices=["campfire"],
-        help="Ambient keyword (currently: campfire)",
+        help="Ambient keyword (e.g., campfire, rain, ocean). Use comma-separated list for multiple sounds.",
     )
     amb.add_argument("--ambience-file", help="Explicit ambience WAV path (mono or stereo)")
 
@@ -474,30 +604,62 @@ def main(argv: list[str] | None = None) -> int:
         out_path=args.binaural_out,
     )
 
-    # 2) Resolve ambience path
+    # 2) Resolve ambience path(s)
     if args.ambient:
-        # Auto-pick campfire clip by binaural length
-        # Calculate target samples directly from duration and sample rate
-        target_samples = int(duration_sec * sr_b)
-        ambience_path = choose_campfire_clip(target_samples, sr_b)
+        # Parse comma-separated ambient sounds
+        ambient_names = [name.strip() for name in args.ambient.split(",")]
+
+        # Validate all ambient sounds
+        for name in ambient_names:
+            if not validate_ambient_sound(name):
+                available = get_available_ambient_sounds()
+                raise SystemExit(
+                    f"Unknown ambient sound '{name}'. Available: {', '.join(available)}"
+                )
+
+        # Get paths for all ambient sounds
+        ambient_paths = []
+        for name in ambient_names:
+            path_obj = get_ambient_sound_path(name)
+            if not path_obj:
+                raise SystemExit(f"Ambient sound file not found: {name}")
+            ambient_paths.append(str(path_obj))
     else:
         ambience_path = str(Path(args.ambience_file).expanduser().resolve())
         if not Path(ambience_path).exists():
             raise SystemExit(f"Ambience file not found: {ambience_path}")
+        ambient_paths = [ambience_path]
 
     # 3) Mix
-    mix_path = mix_binaural_and_ambience(
-        binaural_path=binaural_path,
-        ambience_path=ambience_path,
-        binaural_db=args.binaural_db,
-        ambience_db=args.ambience_db,
-        ambience_fade=args.ambience_fade,
-        out_path=args.out,
-    )
+    if len(ambient_paths) == 1:
+        # Single ambient sound - use existing function
+        mix_path = mix_binaural_and_ambience(
+            binaural_path=binaural_path,
+            ambience_path=ambient_paths[0],
+            binaural_db=args.binaural_db,
+            ambience_db=args.ambience_db,
+            ambience_fade=args.ambience_fade,
+            out_path=args.out,
+        )
+    else:
+        # Multiple ambient sounds - use new function
+        mix_path = mix_binaural_and_multiple_ambience(
+            binaural_path=binaural_path,
+            ambient_paths=ambient_paths,
+            binaural_db=args.binaural_db,
+            individual_ambience_db=args.ambience_db,
+            ambience_fade=args.ambience_fade,
+            out_path=args.out,
+        )
 
     logging.info("\nAll done ✅")
     logging.info(f"Binaural : {binaural_path}")
-    logging.info(f"Ambience : {ambience_path}")
+    if len(ambient_paths) == 1:
+        logging.info(f"Ambience : {ambient_paths[0]}")
+    else:
+        logging.info(f"Ambience : {len(ambient_paths)} sounds")
+        for i, path in enumerate(ambient_paths, 1):
+            logging.info(f"  {i}. {path}")
     logging.info(f"Mixed    : {mix_path}")
     return 0
 

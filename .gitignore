@@ -44,6 +44,7 @@ htmlcov/
 .nox/
 .coverage
 .coverage.*
+coverage.json
 .cache
 nosetests.xml
 coverage.xml
@@ -283,3 +284,6 @@ logs/
 config.ini
 secrets.json
 .secrets
+
+# Sleepstack user configuration files
+sleepstack_config_*.json
