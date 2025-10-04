@@ -1,1 +1,1 @@
-# Test package for sleepstack
+"""Test package for sleepstack."""

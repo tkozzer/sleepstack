@@ -1,0 +1,13 @@
+{
+  "name": "thunder",
+  "path": "/Users/tkozzer/Projects/sleepstack/assets/ambience/thunder/thunder_1m.wav",
+  "duration_seconds": 60.0,
+  "sample_rate": 48000,
+  "channels": 2,
+  "file_size_bytes": 11520078,
+  "created_date": "2025-10-03T18:12:43.655673",
+  "source_url": "https://www.youtube.com/watch?v=nDq6TstdEi8",
+  "description": "Thunder sounds",
+  "last_modified": "2025-10-03T18:12:43.655728",
+  "file_hash": "402758ffc659dadf3696ee7aa3193dea"
+}

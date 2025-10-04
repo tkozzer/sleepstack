@@ -37,6 +37,8 @@ import wave
 import numpy as np
 from typing import Tuple
 
+from .ambient_manager import get_available_ambient_sounds, get_ambient_sound_path, validate_ambient_sound
+
 # ---------- Utility ----------
 
 
@@ -226,8 +228,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument(
         "-a",
         "--ambient",
-        choices=["campfire"],
-        help="Ambient keyword. Currently supported: 'campfire'.",
+        help="Ambient keyword (e.g., campfire, rain, ocean). Use comma-separated list for multiple sounds.",
     )
     ap.add_argument("--ambience-file", help="Explicit ambience WAV path (mono or stereo).")
     ap.add_argument(
@@ -268,13 +269,25 @@ def main(argv: list[str] | None = None) -> int:
     if args.ambient and args.ambience_file:
         raise SystemExit("Use either --ambient or --ambience-file, not both.")
     if args.ambient:
-        ambient_key = args.ambient
-        # Auto-pick campfire clip based on binaural length
-        ambience_path = choose_campfire_clip(target_samples=b.shape[0], sr=sr_b)
+        # Parse comma-separated ambient sounds
+        ambient_names = [name.strip() for name in args.ambient.split(',')]
+        
+        # Validate all ambient sounds
+        for name in ambient_names:
+            if not validate_ambient_sound(name):
+                available = get_available_ambient_sounds()
+                raise SystemExit(f"Unknown ambient sound '{name}'. Available: {', '.join(available)}")
+        
+        # For now, use the first ambient sound (will be enhanced for multi-ambient support)
+        ambient_key = ambient_names[0]
+        ambience_path_obj = get_ambient_sound_path(ambient_key)
+        if not ambience_path_obj:
+            raise SystemExit(f"Ambient sound file not found: {ambient_key}")
+        ambience_path = str(ambience_path_obj)
     elif args.ambience_file:
         ambience_path = args.ambience_file
     else:
-        raise SystemExit("Provide --ambient campfire or --ambience-file <path>")
+        raise SystemExit("Provide --ambient <sound_name> or --ambience-file <path>")
 
     if not os.path.exists(ambience_path):
         raise SystemExit(f"Ambience file not found: {ambience_path}")
