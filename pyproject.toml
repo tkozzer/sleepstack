@@ -1,6 +1,6 @@
 [project]
 name = "sleepstack"
-version = "0.1.0"
+version = "0.2.0"
 description = "Binaural beats + ambience mixer for narration-ready sleep tracks"
 readme = "README.md"
 license = { text = "MIT" }

@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Union
 from dataclasses import dataclass, asdict
 from datetime import datetime
+from importlib.metadata import version
 
 
 @dataclass
@@ -60,7 +61,7 @@ class AppConfig:
     download: DownloadConfig
     processing: ProcessingConfig
     preferences: UserPreferences
-    version: str = "0.1.0"
+    version: str = version("sleepstack")
     last_updated: str = ""
 
     def __post_init__(self) -> None:
@@ -121,7 +122,7 @@ class ConfigManager:
             download=DownloadConfig(**data.get("download", {})),
             processing=ProcessingConfig(**data.get("processing", {})),
             preferences=UserPreferences(**data.get("preferences", {})),
-            version=data.get("version", "0.1.0"),
+            version=data.get("version", version("sleepstack")),
             last_updated=data.get("last_updated", ""),
         )
 
