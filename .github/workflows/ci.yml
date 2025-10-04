@@ -27,6 +27,15 @@ jobs:
     - name: Set up Python
       run: uv python install ${{ matrix.python-version }}
 
+    - name: Install system dependencies
+      run: |
+        if [[ "$RUNNER_OS" == "Linux" ]]; then
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+        elif [[ "$RUNNER_OS" == "macOS" ]]; then
+          brew install ffmpeg
+        fi
+
     - name: Install dependencies
       run: uv sync --frozen
 
@@ -43,6 +52,11 @@ jobs:
         uv run sleepstack --help
         uv run sleepstack --version
         uv run sleepstack --list-vibes
+        uv run sleepstack list-ambient --help
+        uv run sleepstack download-ambient --help
+        uv run sleepstack remove-ambient --help
+        uv run sleepstack config --help
+        uv run sleepstack state --help
 
     - name: Test package installation
       run: |
@@ -54,6 +68,12 @@ jobs:
         uv run sleepstack --vibe calm -a campfire -s 1
         ls -la build/binaural/
         ls -la build/mix/
+    
+    - name: Test ambient sound management (smoke test)
+      run: |
+        uv run sleepstack list-ambient
+        uv run sleepstack config show
+        uv run sleepstack state health
 
   build:
     runs-on: ubuntu-latest
@@ -70,6 +90,11 @@ jobs:
 
     - name: Set up Python
       run: uv python install 3.11
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ffmpeg
 
     - name: Install dependencies
       run: uv sync --frozen

@@ -10,13 +10,15 @@ from importlib.metadata import version
 
 from .main import PRESETS, ALIASES, run
 from .commands import (
-    add_download_ambient_parser, 
-    add_list_ambient_parser, 
+    add_download_ambient_parser,
+    add_list_ambient_parser,
     add_remove_ambient_parser,
     add_validate_assets_parser,
     add_repair_assets_parser,
-    add_cleanup_assets_parser
+    add_cleanup_assets_parser,
 )
+from .commands.config_parser import add_config_parser
+from .commands.state_parser import add_state_parser
 
 
 def setup_logging(verbose: bool = False, quiet: bool = False) -> None:
@@ -70,6 +72,12 @@ Examples:
   sleepstack validate-assets
   sleepstack repair-assets campfire
   sleepstack cleanup-assets
+  
+  # Configuration and state management
+  sleepstack config show
+  sleepstack config set download.default_sample_rate 44100
+  sleepstack state health
+  sleepstack state maintenance
 
   # Other commands
   sleepstack --list-vibes
@@ -91,10 +99,7 @@ For more information, see the user guide in _docs/user-guide.md
 
     # Create subparsers for commands
     subparsers = parser.add_subparsers(
-        dest="command",
-        help="Available commands",
-        metavar="COMMAND",
-        required=False
+        dest="command", help="Available commands", metavar="COMMAND", required=False
     )
 
     # Add subcommand parsers
@@ -104,23 +109,31 @@ For more information, see the user guide in _docs/user-guide.md
     add_validate_assets_parser(subparsers)
     add_repair_assets_parser(subparsers)
     add_cleanup_assets_parser(subparsers)
+    add_config_parser(subparsers)
+    add_state_parser(subparsers)
 
     # Check if the first argument is a known subcommand
     known_commands = [
-        'download-ambient', 'list-ambient', 'remove-ambient',
-        'validate-assets', 'repair-assets', 'cleanup-assets'
+        "download-ambient",
+        "list-ambient",
+        "remove-ambient",
+        "validate-assets",
+        "repair-assets",
+        "cleanup-assets",
+        "config",
+        "state",
     ]
     first_arg = sys.argv[1] if len(sys.argv) > 1 else None
-    
+
     # If no arguments provided, show help with subcommands
     if len(sys.argv) == 1:
         parser.print_help()
         sys.exit(0)
-    
+
     if first_arg in known_commands:
         # Parse as subcommand
         args = parser.parse_args()
-        
+
         # Handle special commands that don't need the main functionality
         if args.list_vibes:
             list_vibes()
@@ -130,7 +143,7 @@ For more information, see the user guide in _docs/user-guide.md
         setup_logging(verbose=args.verbose, quiet=args.quiet)
 
         # Handle subcommands
-        if hasattr(args, 'func'):
+        if hasattr(args, "func"):
             try:
                 exit_code = args.func(args)
                 sys.exit(exit_code)
@@ -150,14 +163,16 @@ For more information, see the user guide in _docs/user-guide.md
         global_parser.add_argument("--verbose", "-v", action="store_true")
         global_parser.add_argument("--quiet", "-q", action="store_true")
         global_parser.add_argument("--list-vibes", action="store_true")
-        global_parser.add_argument("--version", action="version", version=f"sleepstack {version('sleepstack')}")
-        
+        global_parser.add_argument(
+            "--version", action="version", version=f"sleepstack {version('sleepstack')}"
+        )
+
         try:
             global_args, remaining_args = global_parser.parse_known_args()
         except SystemExit:
             # If --version or --help was used, let it handle it
             return
-        
+
         # Handle special commands that don't need the main functionality
         if global_args.list_vibes:
             list_vibes()

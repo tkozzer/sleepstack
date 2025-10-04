@@ -284,3 +284,6 @@ logs/
 config.ini
 secrets.json
 .secrets
+
+# Sleepstack user configuration files
+sleepstack_config_*.json

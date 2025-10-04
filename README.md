@@ -31,19 +31,25 @@ uv run sleepstack --help
 
 ## Documentation
 
-- [User Guide](_docs/user-guide.md) - Complete usage guide with examples and troubleshooting
-- [Sleep Affirmation Primer](_docs/sleep-affirmation-primer.md) - Background on sleep programming techniques
+- [User Guide](_docs/technical/user-guide.md) - Complete usage guide with examples and troubleshooting
+- [Troubleshooting Guide](_docs/technical/troubleshooting.md) - Common issues and solutions
+- [Sleep Affirmation Primer](_docs/informational/sleep-affirmation-primer.md) - Background on sleep programming techniques
 
 ## Features
 
 - **10 vibe presets**: calm, deep, soothe, meditate, airy, warm, focus, flow, alert, dream
-- **Ambient mixing**: Automatic mixing with campfire sounds (1-minute clips with seamless looping) and custom ambience files
+- **YouTube ambient sound downloads**: Download and process ambient sounds directly from YouTube URLs
+- **Multi-ambient mixing**: Mix multiple ambient sounds in a single track (e.g., campfire + rain + thunder)
+- **Ambient sound management**: List, download, and remove ambient sounds with full metadata tracking
+- **Configuration system**: Comprehensive configuration and state management with CLI commands
 - **Customizable parameters**: Beat frequency, carrier frequency, volume, fade settings
 - **Duration limits**: Maximum 10 minutes per track (prevents excessive file sizes and memory usage)
 - **High-quality output**: 48kHz stereo WAV files optimized for narration
-- **CLI interface**: Easy command-line usage with helpful flags (`--list-vibes`, `--version`, `--verbose`)
+- **CLI interface**: Easy command-line usage with helpful flags and subcommands
 
 ## Examples
+
+### Basic Usage
 
 ```bash
 # List all available vibe presets
@@ -61,6 +67,45 @@ uv run sleepstack --vibe focus -a campfire -m 5 --out my_track.wav
 # Maximum duration examples (10 minutes)
 uv run sleepstack --vibe calm -a campfire -m 10
 uv run sleepstack --vibe deep -a campfire -s 600
+```
+
+### Ambient Sound Management
+
+```bash
+# Download ambient sounds from YouTube
+uv run sleepstack download-ambient "https://www.youtube.com/watch?v=example" rain
+uv run sleepstack download-ambient "https://youtu.be/example" ocean --description "Ocean waves"
+
+# List available ambient sounds
+uv run sleepstack list-ambient
+uv run sleepstack list-ambient --detailed
+
+# Mix multiple ambient sounds
+uv run sleepstack --vibe calm -a campfire,rain,thunder -m 5
+uv run sleepstack --vibe deep -a campfire,ocean -m 10
+
+# Remove ambient sounds
+uv run sleepstack remove-ambient rain
+uv run sleepstack remove-ambient thunder --force
+```
+
+### Configuration and State Management
+
+```bash
+# Show current configuration
+uv run sleepstack config show
+
+# Set configuration values
+uv run sleepstack config set download.sample_rate 48000
+
+# Show download history
+uv run sleepstack config history
+
+# Check asset health
+uv run sleepstack state health
+
+# Clean up old records
+uv run sleepstack state cleanup
 ```
 
 ## Testing
@@ -114,3 +159,24 @@ This project uses GitHub Actions for continuous integration:
 - Python 3.11+
 - uv package manager
 - Stereo headphones (binaural beats require stereo separation)
+
+### Prerequisites for Ambient Sound Downloads
+
+To download ambient sounds from YouTube, you need additional system dependencies:
+
+**macOS (using Homebrew):**
+```bash
+brew install ffmpeg
+```
+
+**Ubuntu/Debian:**
+```bash
+sudo apt update
+sudo apt install ffmpeg
+```
+
+**Windows:**
+- Download ffmpeg from https://ffmpeg.org/download.html
+- Add to your system PATH
+
+The `yt-dlp` package is automatically installed with SleepStack.

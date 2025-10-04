@@ -36,9 +36,9 @@ class TestPreset:
             samplerate=48000,
             volume=0.28,
             fade=2.0,
-            description="Test preset"
+            description="Test preset",
         )
-        
+
         assert preset.beat == 6.0
         assert preset.carrier == 200
         assert preset.samplerate == 48000
@@ -49,7 +49,7 @@ class TestPreset:
     def test_preset_defaults(self):
         """Test Preset with default values."""
         preset = Preset(beat=6.0, carrier=200)
-        
+
         assert preset.beat == 6.0
         assert preset.carrier == 200
         assert preset.samplerate == 48000
@@ -64,8 +64,16 @@ class TestPresets:
     def test_presets_contain_expected_keys(self):
         """Test that PRESETS contains expected vibe keys."""
         expected_keys = {
-            "deep", "calm", "soothe", "dream", "focus", "flow", 
-            "alert", "meditate", "warm", "airy"
+            "deep",
+            "calm",
+            "soothe",
+            "dream",
+            "focus",
+            "flow",
+            "alert",
+            "meditate",
+            "warm",
+            "airy",
         }
         assert set(PRESETS.keys()) == expected_keys
 
@@ -113,8 +121,19 @@ class TestAliases:
     def test_aliases_contain_expected_keys(self):
         """Test that ALIASES contains expected alias keys."""
         expected_aliases = {
-            "sleep", "deeper", "settle", "night", "study", "work",
-            "creative", "energize", "presence", "soft", "rain", "fire", "bright"
+            "sleep",
+            "deeper",
+            "settle",
+            "night",
+            "study",
+            "work",
+            "creative",
+            "energize",
+            "presence",
+            "soft",
+            "rain",
+            "fire",
+            "bright",
         }
         assert set(ALIASES.keys()) == expected_aliases
 
@@ -163,10 +182,10 @@ class TestModuleFromPath:
 
     def test_module_from_path_invalid_file(self):
         """Test _module_from_path with invalid Python file."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write("invalid python syntax {")
             temp_path = f.name
-        
+
         try:
             # The function will try to load the file and fail with a syntax error
             with pytest.raises(SyntaxError):
@@ -178,57 +197,65 @@ class TestModuleFromPath:
 class TestImportMakeBinaural:
     """Test _import_make_binaural function."""
 
-    @patch('sleepstack.vibe_binaural._script_dir')
-    @patch('sleepstack.vibe_binaural._module_from_path')
-    @patch('os.path.exists')
-    def test_import_make_binaural_local_file_exists(self, mock_exists, mock_module_from_path, mock_script_dir):
+    @patch("sleepstack.vibe_binaural._script_dir")
+    @patch("sleepstack.vibe_binaural._module_from_path")
+    @patch("os.path.exists")
+    def test_import_make_binaural_local_file_exists(
+        self, mock_exists, mock_module_from_path, mock_script_dir
+    ):
         """Test _import_make_binaural when local file exists."""
         mock_script_dir.return_value = "/test/script/dir"
         mock_exists.return_value = True
         mock_module = Mock()
         mock_module_from_path.return_value = mock_module
-        
+
         result = _import_make_binaural()
-        
+
         assert result == mock_module
         mock_exists.assert_called_once_with("/test/script/dir/make_binaural.py")
-        mock_module_from_path.assert_called_once_with("make_binaural", "/test/script/dir/make_binaural.py")
+        mock_module_from_path.assert_called_once_with(
+            "make_binaural", "/test/script/dir/make_binaural.py"
+        )
 
-    @patch('sleepstack.vibe_binaural._script_dir')
-    @patch('sleepstack.vibe_binaural._module_from_path')
-    @patch('os.path.exists')
-    def test_import_make_binaural_fallback_import(self, mock_exists, mock_module_from_path, mock_script_dir):
+    @patch("sleepstack.vibe_binaural._script_dir")
+    @patch("sleepstack.vibe_binaural._module_from_path")
+    @patch("os.path.exists")
+    def test_import_make_binaural_fallback_import(
+        self, mock_exists, mock_module_from_path, mock_script_dir
+    ):
         """Test _import_make_binaural fallback to regular import."""
         mock_script_dir.return_value = "/test/script/dir"
         mock_exists.return_value = False
         mock_module_from_path.return_value = None
-        
+
         # Since make_binaural.py actually exists in the project, we need to patch the import
-        with patch('importlib.import_module') as mock_import_module:
+        with patch("importlib.import_module") as mock_import_module:
             mock_module = Mock()
             mock_import_module.return_value = mock_module
-            
+
             result = _import_make_binaural()
-            
+
             assert result == mock_module
             mock_exists.assert_called_once_with("/test/script/dir/make_binaural.py")
             mock_import_module.assert_called_once_with("make_binaural")
 
-    @patch('sleepstack.vibe_binaural._script_dir')
-    @patch('sleepstack.vibe_binaural._module_from_path')
-    @patch('os.path.exists')
-    def test_import_make_binaural_all_fail(self, mock_exists, mock_module_from_path, mock_script_dir):
+    @patch("sleepstack.vibe_binaural._script_dir")
+    @patch("sleepstack.vibe_binaural._module_from_path")
+    @patch("os.path.exists")
+    def test_import_make_binaural_all_fail(
+        self, mock_exists, mock_module_from_path, mock_script_dir
+    ):
         """Test _import_make_binaural when all methods fail."""
         mock_script_dir.return_value = "/test/script/dir"
         mock_exists.return_value = False
         mock_module_from_path.return_value = None
-        
+
         # Since make_binaural.py actually exists in the project, we need to patch the import
-        with patch('importlib.import_module') as mock_import_module:
+        with patch("importlib.import_module") as mock_import_module:
             mock_import_module.side_effect = ImportError("Module not found")
-            
+
             result = _import_make_binaural()
-            
+
             assert result is None
             mock_exists.assert_called_once_with("/test/script/dir/make_binaural.py")
             mock_import_module.assert_called_once_with("make_binaural")
@@ -237,15 +264,17 @@ class TestImportMakeBinaural:
 class TestCallMakeBinauralSubprocess:
     """Test _call_make_binaural_subprocess function."""
 
-    @patch('sleepstack.vibe_binaural._script_dir')
-    @patch('os.path.exists')
-    @patch('subprocess.call')
-    def test_call_make_binaural_subprocess_with_minutes(self, mock_subprocess_call, mock_exists, mock_script_dir):
+    @patch("sleepstack.vibe_binaural._script_dir")
+    @patch("os.path.exists")
+    @patch("subprocess.call")
+    def test_call_make_binaural_subprocess_with_minutes(
+        self, mock_subprocess_call, mock_exists, mock_script_dir
+    ):
         """Test _call_make_binaural_subprocess with minutes."""
         mock_script_dir.return_value = "/test/script/dir"
         mock_exists.return_value = True
         mock_subprocess_call.return_value = 0
-        
+
         result = _call_make_binaural_subprocess(
             minutes=5.0,
             seconds=None,
@@ -254,9 +283,9 @@ class TestCallMakeBinauralSubprocess:
             samplerate=48000,
             volume=0.28,
             fade=2.0,
-            out="test.wav"
+            out="test.wav",
         )
-        
+
         assert result == 0
         mock_subprocess_call.assert_called_once()
         call_args = mock_subprocess_call.call_args[0][0]
@@ -269,15 +298,17 @@ class TestCallMakeBinauralSubprocess:
         assert "--out" in call_args
         assert "test.wav" in call_args
 
-    @patch('sleepstack.vibe_binaural._script_dir')
-    @patch('os.path.exists')
-    @patch('subprocess.call')
-    def test_call_make_binaural_subprocess_with_seconds(self, mock_subprocess_call, mock_exists, mock_script_dir):
+    @patch("sleepstack.vibe_binaural._script_dir")
+    @patch("os.path.exists")
+    @patch("subprocess.call")
+    def test_call_make_binaural_subprocess_with_seconds(
+        self, mock_subprocess_call, mock_exists, mock_script_dir
+    ):
         """Test _call_make_binaural_subprocess with seconds."""
         mock_script_dir.return_value = "/test/script/dir"
         mock_exists.return_value = True
         mock_subprocess_call.return_value = 0
-        
+
         result = _call_make_binaural_subprocess(
             minutes=None,
             seconds=300.0,
@@ -286,9 +317,9 @@ class TestCallMakeBinauralSubprocess:
             samplerate=48000,
             volume=0.28,
             fade=2.0,
-            out="test.wav"
+            out="test.wav",
         )
-        
+
         assert result == 0
         mock_subprocess_call.assert_called_once()
         call_args = mock_subprocess_call.call_args[0][0]
@@ -296,15 +327,17 @@ class TestCallMakeBinauralSubprocess:
         assert "300.0" in call_args
         assert "--minutes" not in call_args
 
-    @patch('sleepstack.vibe_binaural._script_dir')
-    @patch('os.path.exists')
-    @patch('subprocess.call')
-    def test_call_make_binaural_subprocess_file_not_exists(self, mock_subprocess_call, mock_exists, mock_script_dir):
+    @patch("sleepstack.vibe_binaural._script_dir")
+    @patch("os.path.exists")
+    @patch("subprocess.call")
+    def test_call_make_binaural_subprocess_file_not_exists(
+        self, mock_subprocess_call, mock_exists, mock_script_dir
+    ):
         """Test _call_make_binaural_subprocess when make_binaural.py doesn't exist locally."""
         mock_script_dir.return_value = "/test/script/dir"
         mock_exists.return_value = False
         mock_subprocess_call.return_value = 0
-        
+
         result = _call_make_binaural_subprocess(
             minutes=5.0,
             seconds=None,
@@ -313,9 +346,9 @@ class TestCallMakeBinauralSubprocess:
             samplerate=48000,
             volume=0.28,
             fade=2.0,
-            out="test.wav"
+            out="test.wav",
         )
-        
+
         assert result == 0
         mock_subprocess_call.assert_called_once()
         call_args = mock_subprocess_call.call_args[0][0]
@@ -334,7 +367,7 @@ class TestResolveVibe:
         """Test resolve_vibe with direct preset name."""
         result = resolve_vibe("deep")
         assert result == "deep"
-        
+
         result = resolve_vibe("calm")
         assert result == "calm"
 
@@ -342,10 +375,10 @@ class TestResolveVibe:
         """Test resolve_vibe with alias."""
         result = resolve_vibe("sleep")
         assert result == "deep"
-        
+
         result = resolve_vibe("night")
         assert result == "calm"
-        
+
         result = resolve_vibe("study")
         assert result == "focus"
 
@@ -353,7 +386,7 @@ class TestResolveVibe:
         """Test resolve_vibe with different cases."""
         result = resolve_vibe("DEEP")
         assert result == "deep"
-        
+
         result = resolve_vibe("Sleep")
         assert result == "deep"
 
@@ -366,7 +399,7 @@ class TestResolveVibe:
         """Test resolve_vibe with fuzzy matching."""
         result = resolve_vibe("de")
         assert result == "deep"
-        
+
         result = resolve_vibe("cal")
         assert result == "calm"
 
@@ -380,19 +413,19 @@ class TestResolveVibe:
 class TestListVibes:
     """Test list_vibes function."""
 
-    @patch('builtins.print')
+    @patch("builtins.print")
     def test_list_vibes(self, mock_print):
         """Test list_vibes function."""
         list_vibes()
-        
+
         # Should print available vibes
         assert mock_print.call_count > 0
-        
+
         # Check that all presets are listed
         printed_text = " ".join(str(call) for call in mock_print.call_args_list)
         for preset_name in PRESETS.keys():
             assert preset_name in printed_text
-        
+
         # Check that aliases are listed
         for alias in ALIASES.keys():
             assert alias in printed_text
@@ -411,10 +444,10 @@ class TestValidationFunctions:
         """Test positive_float_minutes with invalid values."""
         with pytest.raises(argparse.ArgumentTypeError, match="must be > 0"):
             positive_float_minutes("0")
-        
+
         with pytest.raises(argparse.ArgumentTypeError, match="must be > 0"):
             positive_float_minutes("-1")
-        
+
         with pytest.raises(argparse.ArgumentTypeError, match="must be <= 10 minutes"):
             positive_float_minutes("11")
 
@@ -428,10 +461,10 @@ class TestValidationFunctions:
         """Test positive_float_seconds with invalid values."""
         with pytest.raises(argparse.ArgumentTypeError, match="must be > 0"):
             positive_float_seconds("0")
-        
+
         with pytest.raises(argparse.ArgumentTypeError, match="must be > 0"):
             positive_float_seconds("-1")
-        
+
         with pytest.raises(argparse.ArgumentTypeError, match="must be <= 600 seconds"):
             positive_float_seconds("601")
 
@@ -452,116 +485,135 @@ class TestMain:
 
     def test_main_list_flag(self):
         """Test main with --list flag."""
-        with patch('sleepstack.vibe_binaural.list_vibes') as mock_list_vibes:
+        with patch("sleepstack.vibe_binaural.list_vibes") as mock_list_vibes:
             result = main(["--list"])
             assert result == 0
             mock_list_vibes.assert_called_once()
 
     def test_main_default_vibe(self):
         """Test main with default vibe."""
-        with patch('sleepstack.vibe_binaural._import_make_binaural') as mock_import, \
-             patch('builtins.print') as mock_print:
-            
+        with (
+            patch("sleepstack.vibe_binaural._import_make_binaural") as mock_import,
+            patch("builtins.print") as mock_print,
+        ):
+
             # Mock the module
             mock_module = Mock()
             mock_module.generate_binaural.return_value = Mock()
             mock_import.return_value = mock_module
-            
+
             result = main(["--dry-run"])
             assert result == 0
-            
+
             # Should use calm as default
             printed_text = " ".join(str(call) for call in mock_print.call_args_list)
             assert "calm" in printed_text
 
     def test_main_with_vibe(self):
         """Test main with specific vibe."""
-        with patch('sleepstack.vibe_binaural._import_make_binaural') as mock_import, \
-             patch('builtins.print') as mock_print:
-            
+        with (
+            patch("sleepstack.vibe_binaural._import_make_binaural") as mock_import,
+            patch("builtins.print") as mock_print,
+        ):
+
             # Mock the module
             mock_module = Mock()
             mock_module.generate_binaural.return_value = Mock()
             mock_import.return_value = mock_module
-            
+
             result = main(["--vibe", "deep", "--dry-run"])
             assert result == 0
-            
+
             # Should use deep vibe
             printed_text = " ".join(str(call) for call in mock_print.call_args_list)
             assert "deep" in printed_text
 
     def test_main_with_alias(self):
         """Test main with alias."""
-        with patch('sleepstack.vibe_binaural._import_make_binaural') as mock_import, \
-             patch('builtins.print') as mock_print:
-            
+        with (
+            patch("sleepstack.vibe_binaural._import_make_binaural") as mock_import,
+            patch("builtins.print") as mock_print,
+        ):
+
             # Mock the module
             mock_module = Mock()
             mock_module.generate_binaural.return_value = Mock()
             mock_import.return_value = mock_module
-            
+
             result = main(["--vibe", "sleep", "--dry-run"])
             assert result == 0
-            
+
             # Should resolve to deep
             printed_text = " ".join(str(call) for call in mock_print.call_args_list)
             assert "deep" in printed_text
 
     def test_main_with_minutes(self):
         """Test main with --minutes."""
-        with patch('sleepstack.vibe_binaural._import_make_binaural') as mock_import, \
-             patch('builtins.print') as mock_print:
-            
+        with (
+            patch("sleepstack.vibe_binaural._import_make_binaural") as mock_import,
+            patch("builtins.print") as mock_print,
+        ):
+
             # Mock the module
             mock_module = Mock()
             mock_module.generate_binaural.return_value = Mock()
             mock_import.return_value = mock_module
-            
+
             result = main(["--minutes", "3", "--dry-run"])
             assert result == 0
-            
+
             # Should show 3 minutes duration
             printed_text = " ".join(str(call) for call in mock_print.call_args_list)
             assert "180.0 s" in printed_text
 
     def test_main_with_seconds(self):
         """Test main with --seconds."""
-        with patch('sleepstack.vibe_binaural._import_make_binaural') as mock_import, \
-             patch('builtins.print') as mock_print:
-            
+        with (
+            patch("sleepstack.vibe_binaural._import_make_binaural") as mock_import,
+            patch("builtins.print") as mock_print,
+        ):
+
             # Mock the module
             mock_module = Mock()
             mock_module.generate_binaural.return_value = Mock()
             mock_import.return_value = mock_module
-            
+
             result = main(["--seconds", "120", "--dry-run"])
             assert result == 0
-            
+
             # Should show 120 seconds duration
             printed_text = " ".join(str(call) for call in mock_print.call_args_list)
             assert "120.0 s" in printed_text
 
     def test_main_with_overrides(self):
         """Test main with parameter overrides."""
-        with patch('sleepstack.vibe_binaural._import_make_binaural') as mock_import, \
-             patch('builtins.print') as mock_print:
-            
+        with (
+            patch("sleepstack.vibe_binaural._import_make_binaural") as mock_import,
+            patch("builtins.print") as mock_print,
+        ):
+
             # Mock the module
             mock_module = Mock()
             mock_module.generate_binaural.return_value = Mock()
             mock_import.return_value = mock_module
-            
-            result = main([
-                "--vibe", "calm",
-                "--beat", "7.0",
-                "--carrier", "220",
-                "--volume", "0.3",
-                "--fade", "1.0",
-                "--dry-run"
-            ])
+
+            result = main(
+                [
+                    "--vibe",
+                    "calm",
+                    "--beat",
+                    "7.0",
+                    "--carrier",
+                    "220",
+                    "--volume",
+                    "0.3",
+                    "--fade",
+                    "1.0",
+                    "--dry-run",
+                ]
+            )
             assert result == 0
-            
+
             # Should show overridden values
             printed_text = " ".join(str(call) for call in mock_print.call_args_list)
             assert "7.0 Hz" in printed_text
@@ -571,85 +623,95 @@ class TestMain:
 
     def test_main_with_loop(self):
         """Test main with --loop flag."""
-        with patch('sleepstack.vibe_binaural._import_make_binaural') as mock_import, \
-             patch('builtins.print') as mock_print:
-            
+        with (
+            patch("sleepstack.vibe_binaural._import_make_binaural") as mock_import,
+            patch("builtins.print") as mock_print,
+        ):
+
             # Mock the module
             mock_module = Mock()
             mock_module.generate_binaural.return_value = Mock()
             mock_import.return_value = mock_module
-            
+
             result = main(["--loop", "--dry-run"])
             assert result == 0
-            
+
             # Should show fade=0
             printed_text = " ".join(str(call) for call in mock_print.call_args_list)
             assert "0.0 s" in printed_text
 
     def test_main_with_output_filename(self):
         """Test main with --out."""
-        with patch('sleepstack.vibe_binaural._import_make_binaural') as mock_import, \
-             patch('builtins.print') as mock_print:
-            
+        with (
+            patch("sleepstack.vibe_binaural._import_make_binaural") as mock_import,
+            patch("builtins.print") as mock_print,
+        ):
+
             # Mock the module
             mock_module = Mock()
             mock_module.generate_binaural.return_value = Mock()
             mock_import.return_value = mock_module
-            
+
             result = main(["--out", "custom.wav", "--dry-run"])
             assert result == 0
-            
+
             # Should show custom filename
             printed_text = " ".join(str(call) for call in mock_print.call_args_list)
             assert "custom.wav" in printed_text
 
     def test_main_generate_binaural_success(self):
         """Test main with successful binaural generation."""
-        with patch('sleepstack.vibe_binaural._import_make_binaural') as mock_import, \
-             patch('builtins.print') as mock_print:
-            
+        with (
+            patch("sleepstack.vibe_binaural._import_make_binaural") as mock_import,
+            patch("builtins.print") as mock_print,
+        ):
+
             # Mock the module
             mock_module = Mock()
             mock_data = Mock()
             mock_module.generate_binaural.return_value = mock_data
             mock_import.return_value = mock_module
-            
+
             result = main(["--minutes", "1"])
             assert result == 0
-            
+
             # Should call generate_binaural and save_wav
             mock_module.generate_binaural.assert_called_once()
             mock_module.save_wav.assert_called_once()
 
     def test_main_fallback_to_subprocess(self):
         """Test main fallback to subprocess when import fails."""
-        with patch('sleepstack.vibe_binaural._import_make_binaural') as mock_import, \
-             patch('sleepstack.vibe_binaural._call_make_binaural_subprocess') as mock_subprocess, \
-             patch('builtins.print') as mock_print:
-            
+        with (
+            patch("sleepstack.vibe_binaural._import_make_binaural") as mock_import,
+            patch("sleepstack.vibe_binaural._call_make_binaural_subprocess") as mock_subprocess,
+            patch("builtins.print") as mock_print,
+        ):
+
             # Mock import failure
             mock_import.return_value = None
             mock_subprocess.return_value = 0
-            
+
             result = main(["--minutes", "1"])
             assert result == 0
-            
+
             # Should call subprocess
             mock_subprocess.assert_called_once()
 
     def test_main_subprocess_failure(self):
         """Test main when subprocess fails."""
-        with patch('sleepstack.vibe_binaural._import_make_binaural') as mock_import, \
-             patch('sleepstack.vibe_binaural._call_make_binaural_subprocess') as mock_subprocess, \
-             patch('builtins.print') as mock_print:
-            
+        with (
+            patch("sleepstack.vibe_binaural._import_make_binaural") as mock_import,
+            patch("sleepstack.vibe_binaural._call_make_binaural_subprocess") as mock_subprocess,
+            patch("builtins.print") as mock_print,
+        ):
+
             # Mock import failure
             mock_import.return_value = None
             mock_subprocess.return_value = 1
-            
+
             result = main(["--minutes", "1"])
             assert result == 1
-            
+
             # Should call subprocess
             mock_subprocess.assert_called_once()
 
@@ -682,27 +744,31 @@ class TestIntegration:
         for name, preset in PRESETS.items():
             # Beat should be in reasonable range for binaural beats
             assert 1.0 <= preset.beat <= 20.0, f"Preset {name} has unreasonable beat frequency"
-            
+
             # Carrier should be in reasonable range
-            assert 50.0 <= preset.carrier <= 500.0, f"Preset {name} has unreasonable carrier frequency"
-            
+            assert (
+                50.0 <= preset.carrier <= 500.0
+            ), f"Preset {name} has unreasonable carrier frequency"
+
             # Volume should be reasonable
             assert 0.0 < preset.volume <= 1.0, f"Preset {name} has unreasonable volume"
-            
+
             # Fade should be non-negative
             assert preset.fade >= 0.0, f"Preset {name} has negative fade"
 
     def test_alias_consistency(self):
         """Test that all aliases map to existing presets."""
         for alias, preset_key in ALIASES.items():
-            assert preset_key in PRESETS, f"Alias '{alias}' maps to non-existent preset '{preset_key}'"
+            assert (
+                preset_key in PRESETS
+            ), f"Alias '{alias}' maps to non-existent preset '{preset_key}'"
 
     def test_vibe_resolution_consistency(self):
         """Test that vibe resolution is consistent."""
         # Test all direct presets
         for preset_name in PRESETS.keys():
             assert resolve_vibe(preset_name) == preset_name
-        
+
         # Test all aliases
         for alias, expected_preset in ALIASES.items():
             assert resolve_vibe(alias) == expected_preset

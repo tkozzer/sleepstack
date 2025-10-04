@@ -21,7 +21,7 @@ class TestYouTubeURLValidation:
             "https://youtube.com/watch?v=dQw4w9WgXcQ",
             "https://m.youtube.com/watch?v=dQw4w9WgXcQ",
         ]
-        
+
         for url in valid_urls:
             assert validate_youtube_url(url) is True
 
@@ -33,7 +33,7 @@ class TestYouTubeURLValidation:
             "not_a_url",
             "",
         ]
-        
+
         for url in invalid_urls:
             assert validate_youtube_url(url) is False
 
@@ -43,7 +43,7 @@ class TestYouTubeURLValidation:
             "https://",
             "youtube.com/watch?v=dQw4w9WgXcQ",  # Missing protocol
         ]
-        
+
         for url in malformed_urls:
             assert validate_youtube_url(url) is False
 
@@ -60,7 +60,7 @@ class TestSoundNameSanitization:
             "campfire",
             "wind",
         ]
-        
+
         for name in valid_names:
             assert sanitize_sound_name(name) == name
 
@@ -72,7 +72,7 @@ class TestSoundNameSanitization:
             ("rain/storm", "rain_storm"),  # This should work
             ("ocean waves!", "ocean waves!"),  # Current behavior
         ]
-        
+
         for input_name, expected in test_cases:
             result = sanitize_sound_name(input_name)
             assert result == expected
@@ -84,7 +84,7 @@ class TestSoundNameSanitization:
             ("  thunder  ", "thunder"),
             ("rain\nstorm", "rain\nstorm"),  # Current behavior
         ]
-        
+
         for input_name, expected in test_cases:
             result = sanitize_sound_name(input_name)
             assert result == expected
@@ -98,19 +98,19 @@ class TestSoundNameSanitization:
 class TestPrerequisitesValidation:
     """Test prerequisite validation."""
 
-    @patch('shutil.which')
+    @patch("shutil.which")
     def test_prerequisites_available(self, mock_which):
         """Test when all prerequisites are available."""
         mock_which.return_value = "/usr/bin/ffmpeg"
-        
+
         # Should not raise an exception
         validate_prerequisites()
 
-    @patch('shutil.which')
+    @patch("shutil.which")
     def test_prerequisites_missing_ffmpeg(self, mock_which):
         """Test when ffmpeg is missing."""
         mock_which.return_value = None
-        
+
         with pytest.raises(Exception):  # PrerequisiteError
             validate_prerequisites()
 
@@ -121,10 +121,10 @@ class TestRealWorldFunctionality:
     def test_ambient_sound_discovery(self):
         """Test that we can discover existing ambient sounds."""
         from sleepstack.ambient_manager import get_available_ambient_sounds
-        
+
         # This should work with the real assets directory
         sounds = get_available_ambient_sounds()
-        
+
         # We know campfire and thunder should exist
         assert "campfire" in sounds
         assert "thunder" in sounds
@@ -133,27 +133,27 @@ class TestRealWorldFunctionality:
     def test_ambient_sound_validation(self):
         """Test that we can validate existing ambient sounds."""
         from sleepstack.ambient_manager import validate_ambient_sound
-        
+
         # Test with known existing sounds
         assert validate_ambient_sound("campfire") is True
         assert validate_ambient_sound("thunder") is True
-        
+
         # Test with nonexistent sound
         assert validate_ambient_sound("nonexistent_sound") is False
 
     def test_ambient_sound_path_retrieval(self):
         """Test that we can get paths for existing ambient sounds."""
         from sleepstack.ambient_manager import get_ambient_sound_path
-        
+
         # Test with known existing sounds
         campfire_path = get_ambient_sound_path("campfire")
         assert campfire_path is not None
         assert campfire_path.name == "campfire_1m.wav"
-        
+
         thunder_path = get_ambient_sound_path("thunder")
         assert thunder_path is not None
         assert thunder_path.name == "thunder_1m.wav"
-        
+
         # Test with nonexistent sound
         nonexistent_path = get_ambient_sound_path("nonexistent_sound")
         assert nonexistent_path is None
@@ -163,17 +163,17 @@ class TestRealWorldFunctionality:
         from sleepstack.cli import main
         import sys
         from io import StringIO
-        
+
         # Capture stdout
         old_stdout = sys.stdout
         sys.stdout = captured_output = StringIO()
-        
+
         try:
             # Test subcommand help - catch SystemExit from argparse
             sys.argv = ["sleepstack", "download-ambient", "--help"]
             with pytest.raises(SystemExit):
                 main()
-            
+
             output = captured_output.getvalue()
             assert "download-ambient" in output
             assert "url" in output
@@ -186,18 +186,18 @@ class TestRealWorldFunctionality:
         from sleepstack.commands.list_ambient import list_ambient_command
         import sys
         from io import StringIO
-        
+
         # Capture stdout
         old_stdout = sys.stdout
         sys.stdout = captured_output = StringIO()
-        
+
         try:
             # Create mock args
             args = Mock()
             args.detailed = False
-            
+
             list_ambient_command(args)
-            
+
             output = captured_output.getvalue()
             assert "campfire" in output
             assert "thunder" in output
