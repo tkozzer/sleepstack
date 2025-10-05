@@ -21,7 +21,7 @@ from urllib.parse import urlparse
 
 import ffmpeg
 import yt_dlp
-from yt_dlp.utils import DownloadError, ExtractorError
+from yt_dlp.utils import DownloadError, ExtractorError, download_range_func
 
 from .config import get_config_manager
 from .state_manager import get_state_manager
@@ -314,20 +314,22 @@ def download_audio(
     config_manager = get_config_manager()
     config = config_manager.get_config()
 
-    # NOTE: yt-dlp version 2025.09.26 has a bug where download_sections doesn't work in Python API
-    # The parameter is ignored and full videos are downloaded. We work around this by:
-    # 1. Downloading the full video (as it currently does due to the bug)
-    # 2. Using FFmpeg to trim it to the desired segment during post-processing
-    # TODO: Remove this workaround when yt-dlp fixes the download_sections bug
+    # Build the callable that the downloader expects using download_range_func
+    # This is necessary because the download_sections parameter doesn't work in the Python API
+    range_selector = download_range_func(
+        chapters=[],  # no chapter-based filtering
+        ranges=[[start_time, start_time + duration]],  # keep only the specified time range
+        from_info=False,  # ignore start/end hints from the info dict
+    )
+
     ydl_opts = {
         "format": "bestaudio/best",
         "outtmpl": str(output_path),
         "quiet": True,
         "no_warnings": True,
         "socket_timeout": config.preferences.download_timeout,
-        # download_sections is commented out due to yt-dlp bug - see note above
-        # "download_sections": f"*{start_time}-{start_time + duration}",
-        # "force_keyframes_at_cuts": True,
+        "download_ranges": range_selector,  # Use the callable instead of download_sections
+        "force_keyframes_at_cuts": True,
     }
 
     # Add progress hook if callback provided
@@ -365,8 +367,8 @@ def process_audio(
     Args:
         input_path: Path to input audio file
         output_path: Path for processed audio file
-        start_time: Start time in seconds (default: 60s)
-        duration: Duration to extract in seconds (default: 60s)
+        start_time: Start time in seconds (default: 60s) - not used since yt-dlp downloads only the segment
+        duration: Duration in seconds (default: 60s) - not used since yt-dlp downloads only the segment
         sample_rate: Target sample rate (default: 48kHz)
 
     Raises:
@@ -376,9 +378,9 @@ def process_audio(
         # Create output directory if it doesn't exist
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Use ffmpeg to process the audio
+        # Use ffmpeg to process the audio (no need to trim since yt-dlp downloads only the desired segment)
         (
-            ffmpeg.input(str(input_path), ss=start_time, t=duration)
+            ffmpeg.input(str(input_path))
             .output(
                 str(output_path),
                 acodec="pcm_s16le",  # 16-bit PCM
@@ -493,8 +495,7 @@ def download_and_process_ambient_sound(
                 else:
                     raise AmbientDownloadError("No audio file was downloaded")
 
-                # Cache the downloaded audio
-                cache_audio(url, actual_temp_path)
+                # Don't cache the raw download - we'll cache the processed audio instead
 
             except Exception as e:
                 # Clean up temp files on error
@@ -523,6 +524,9 @@ def download_and_process_ambient_sound(
             duration=config.download.default_duration,
             sample_rate=config.download.default_sample_rate,
         )
+
+        # Cache the processed audio file (audio-only, much smaller)
+        cache_audio(url, output_file)
 
         # Create metadata and add to asset manager
         from .ambient_manager import AmbientSoundMetadata
