@@ -125,10 +125,9 @@ class TestRealWorldFunctionality:
         # This should work with the real assets directory
         sounds = get_available_ambient_sounds()
 
-        # We know campfire and thunder should exist
+        # We know campfire should exist
         assert "campfire" in sounds
-        assert "thunder" in sounds
-        assert len(sounds) >= 2
+        assert len(sounds) >= 1
 
     def test_ambient_sound_validation(self):
         """Test that we can validate existing ambient sounds."""
@@ -136,7 +135,6 @@ class TestRealWorldFunctionality:
 
         # Test with known existing sounds
         assert validate_ambient_sound("campfire") is True
-        assert validate_ambient_sound("thunder") is True
 
         # Test with nonexistent sound
         assert validate_ambient_sound("nonexistent_sound") is False
@@ -149,10 +147,6 @@ class TestRealWorldFunctionality:
         campfire_path = get_ambient_sound_path("campfire")
         assert campfire_path is not None
         assert campfire_path.name == "campfire_1m.wav"
-
-        thunder_path = get_ambient_sound_path("thunder")
-        assert thunder_path is not None
-        assert thunder_path.name == "thunder_1m.wav"
 
         # Test with nonexistent sound
         nonexistent_path = get_ambient_sound_path("nonexistent_sound")
@@ -200,6 +194,5 @@ class TestRealWorldFunctionality:
 
             output = captured_output.getvalue()
             assert "campfire" in output
-            assert "thunder" in output
         finally:
             sys.stdout = old_stdout

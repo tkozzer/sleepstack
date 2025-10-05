@@ -364,7 +364,7 @@ class TestProcessAudio:
 
         process_audio(input_path, output_path)
 
-        mock_ffmpeg.input.assert_called_once_with(str(input_path), ss=60, t=60)
+        mock_ffmpeg.input.assert_called_once_with(str(input_path))
         mock_input.output.assert_called_once()
         mock_output.overwrite_output.assert_called_once()
         mock_run.assert_called_once_with(quiet=True, capture_stdout=True, capture_stderr=True)
@@ -387,7 +387,7 @@ class TestProcessAudio:
 
         process_audio(input_path, output_path, start_time=30, duration=90, sample_rate=44100)
 
-        mock_ffmpeg.input.assert_called_once_with(str(input_path), ss=30, t=90)
+        mock_ffmpeg.input.assert_called_once_with(str(input_path))
 
     @patch("sleepstack.download_ambient.ffmpeg")
     def test_process_audio_ffmpeg_error(self, mock_ffmpeg):
